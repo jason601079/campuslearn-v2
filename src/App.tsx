@@ -6,7 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
-import Courses from "./pages/Courses";
+import Events from "./pages/Events";
+import Tutors from "./pages/Tutors";
 import Forum from "./pages/Forum";
 import Messages from "./pages/Messages";
 import Resources from "./pages/Resources";
@@ -44,7 +45,8 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/" element={<Dashboard />} />
-        <Route path="/courses" element={<Courses />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/tutors" element={<Tutors />} />
         <Route path="/forum" element={<Forum />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/resources" element={<Resources />} />

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CreatePostModal } from '@/components/ui/CreatePostModal';
 import {
   MessageSquare,
   Search,
@@ -13,12 +14,18 @@ import {
   Clock,
   Users,
   ThumbsUp,
+  ThumbsDown,
   MessageCircle,
   Pin,
+  ArrowUp,
+  ArrowDown,
+  Share,
+  MoreHorizontal,
 } from 'lucide-react';
 
 export default function Forum() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [createPostOpen, setCreatePostOpen] = useState(false);
 
   const forumPosts = [
     {
@@ -30,9 +37,11 @@ export default function Forum() {
       timestamp: '2 hours ago',
       category: 'Mathematics',
       replies: 8,
-      likes: 12,
+      upvotes: 12,
+      downvotes: 2,
       isPinned: true,
-      tags: ['calculus', 'integration', 'help']
+      tags: ['calculus', 'integration', 'help'],
+      community: 'r/Mathematics'
     },
     {
       id: 2,
@@ -43,9 +52,11 @@ export default function Forum() {
       timestamp: '4 hours ago',
       category: 'Computer Science',
       replies: 15,
-      likes: 23,
+      upvotes: 23,
+      downvotes: 1,
       isPinned: false,
-      tags: ['data-structures', 'resources', 'practice']
+      tags: ['data-structures', 'resources', 'practice'],
+      community: 'r/ComputerScience'
     },
     {
       id: 3,
@@ -56,9 +67,11 @@ export default function Forum() {
       timestamp: '6 hours ago',
       category: 'Chemistry',
       replies: 6,
-      likes: 9,
+      upvotes: 9,
+      downvotes: 0,
       isPinned: false,
-      tags: ['chemistry', 'study-group', 'finals']
+      tags: ['chemistry', 'study-group', 'finals'],
+      community: 'r/Chemistry'
     },
   ];
 
@@ -68,6 +81,36 @@ export default function Forum() {
     { name: 'Chemistry', count: 22, color: 'bg-success' },
     { name: 'Physics', count: 19, color: 'bg-warning' },
     { name: 'General', count: 67, color: 'bg-muted' },
+  ];
+
+  const recentPosts = [
+    { 
+      id: 1, 
+      title: 'I want to create a small game for my girlfriend\'s birthday. Any suggestions or...', 
+      community: 'r/IndieDev',
+      timeAgo: '7 mo. ago',
+      upvotes: 10,
+      comments: 27,
+      thumbnail: '/api/placeholder/60/40'
+    },
+    { 
+      id: 2, 
+      title: 'Games that my long distance girlfriend and I could play together', 
+      community: 'r/gamingsuggestions',
+      timeAgo: '2 yr. ago',
+      upvotes: 114,
+      comments: 92,
+      thumbnail: null
+    },
+    { 
+      id: 3, 
+      title: 'I made a website for my girlfriend and I to play...', 
+      community: 'r/LDR',
+      timeAgo: '7 mo. ago',
+      upvotes: 88,
+      comments: 7,
+      thumbnail: '/api/placeholder/60/40'
+    },
   ];
 
   const trendingTopics = [
@@ -85,13 +128,16 @@ export default function Forum() {
           <h1 className="text-3xl font-bold">Community Forum</h1>
           <p className="text-muted-foreground">Connect, share knowledge, and get help from fellow students</p>
         </div>
-        <Button className="bg-gradient-primary hover:opacity-90">
+        <Button 
+          className="bg-gradient-primary hover:opacity-90"
+          onClick={() => setCreatePostOpen(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           New Post
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-4">
+      <div className="grid gap-6 lg:grid-cols-5">
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
           {/* Search and Tabs */}
@@ -119,61 +165,69 @@ export default function Forum() {
           </Card>
 
           {/* Forum Posts */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             {forumPosts.map((post) => (
-              <Card key={post.id} className="hover:shadow-custom-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={post.avatar} />
-                      <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            {post.isPinned && <Pin className="h-4 w-4 text-primary" />}
-                            <h3 className="font-semibold text-lg hover:text-primary cursor-pointer">
-                              {post.title}
-                            </h3>
-                          </div>
-                          <p className="text-muted-foreground mb-3">{post.content}</p>
-                          
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {post.tags.map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
-                                #{tag}
-                              </Badge>
-                            ))}
-                          </div>
-                          
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <span className="font-medium">{post.author}</span>
-                            <div className="flex items-center">
-                              <Clock className="mr-1 h-3 w-3" />
-                              {post.timestamp}
+              <Card key={post.id} className="hover:shadow-custom-md transition-shadow border-l-2 border-l-transparent hover:border-l-primary">
+                <CardContent className="p-4">
+                  <div className="flex items-start space-x-3">
+                    {/* Voting */}
+                    <div className="flex flex-col items-center space-y-1 min-w-[40px]">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:text-orange-500">
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {post.upvotes - post.downvotes}
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:text-blue-500">
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 text-xs text-muted-foreground mb-2">
+                        <span className="font-medium hover:underline cursor-pointer">{post.community}</span>
+                        <span>•</span>
+                        <span>Posted by u/{post.author}</span>
+                        <span>•</span>
+                        <span>{post.timestamp}</span>
+                        {post.isPinned && (
+                          <>
+                            <span>•</span>
+                            <div className="flex items-center text-green-600">
+                              <Pin className="h-3 w-3 mr-1" />
+                              <span>Pinned</span>
                             </div>
-                            <Badge variant="secondary" className="text-xs">
-                              {post.category}
-                            </Badge>
-                          </div>
-                        </div>
+                          </>
+                        )}
                       </div>
-                      
-                      <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                        <div className="flex items-center space-x-4">
-                          <Button variant="ghost" size="sm" className="h-8">
-                            <ThumbsUp className="mr-1 h-3 w-3" />
-                            {post.likes}
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8">
-                            <MessageCircle className="mr-1 h-3 w-3" />
-                            {post.replies} replies
-                          </Button>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          View Discussion
+
+                      <h3 className="font-medium text-foreground hover:text-primary cursor-pointer mb-2 line-clamp-2">
+                        {post.title}
+                      </h3>
+
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{post.content}</p>
+
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {post.tags.map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            #{tag}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                        <Button variant="ghost" size="sm" className="h-7 px-2 hover:bg-muted">
+                          <MessageCircle className="mr-1 h-3 w-3" />
+                          {post.replies} Comments
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-7 px-2 hover:bg-muted">
+                          <Share className="mr-1 h-3 w-3" />
+                          Share
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-7 px-2 hover:bg-muted">
+                          <MoreHorizontal className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -184,8 +238,8 @@ export default function Forum() {
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
+        {/* Left Sidebar - Categories */}
+        <div className="lg:col-span-1 space-y-6">
           {/* Categories */}
           <Card>
             <CardHeader>
@@ -225,31 +279,52 @@ export default function Forum() {
               ))}
             </CardContent>
           </Card>
+        </div>
 
-          {/* Forum Stats */}
+        {/* Right Sidebar - Recent Posts */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Recent Posts */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Forum Stats</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Recent Posts</CardTitle>
+              <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+                Clear
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-center p-4 bg-gradient-subtle rounded-lg">
-                <div className="text-2xl font-bold text-primary">1,234</div>
-                <div className="text-sm text-muted-foreground">Total Posts</div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <div className="text-lg font-semibold">567</div>
-                  <div className="text-xs text-muted-foreground">Active Users</div>
+              {recentPosts.map((post) => (
+                <div key={post.id} className="flex items-start space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-1 text-xs text-muted-foreground mb-1">
+                      <span className="font-medium">{post.community}</span>
+                      <span>•</span>
+                      <span>{post.timeAgo}</span>
+                    </div>
+                    <h4 className="text-sm font-medium line-clamp-2 mb-2">
+                      {post.title}
+                    </h4>
+                    <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                      <span>{post.upvotes} upvotes</span>
+                      <span>{post.comments} comments</span>
+                    </div>
+                  </div>
+                  {post.thumbnail && (
+                    <div className="w-12 h-8 bg-muted rounded overflow-hidden flex-shrink-0">
+                      <div className="w-full h-full bg-gradient-subtle" />
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <div className="text-lg font-semibold">89</div>
-                  <div className="text-xs text-muted-foreground">Online Now</div>
-                </div>
-              </div>
+              ))}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <CreatePostModal 
+        open={createPostOpen} 
+        onOpenChange={setCreatePostOpen}
+      />
     </div>
   );
 }
