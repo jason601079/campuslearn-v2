@@ -77,22 +77,22 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
-        <DialogHeader className="flex flex-row items-center justify-between">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex flex-row items-center justify-between shrink-0 pb-4">
           <DialogTitle className="text-2xl">Create post</DialogTitle>
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <span>Drafts</span>
-            <Badge variant="secondary">1</Badge>
+            <Badge variant="secondary" className="bg-warning text-warning-foreground">1</Badge>
           </div>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col space-y-4">
+        <div className="flex-1 flex flex-col space-y-4 overflow-hidden min-h-0">
           {/* Community Selection */}
           <Select value={community} onValueChange={setCommunity}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full border-2 border-warning/50 focus:border-warning">
               <SelectValue placeholder="Select a community" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border z-50">
               {communities.map((comm) => (
                 <SelectItem key={comm} value={comm.toLowerCase().replace(' ', '-')}>
                   {comm}
@@ -102,22 +102,23 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
           </Select>
 
           {/* Post Type Tabs */}
-          <Tabs value={postType} onValueChange={setPostType} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs value={postType} onValueChange={setPostType} className="w-full shrink-0">
+            <TabsList className="grid w-full grid-cols-4 bg-muted/50">
               <TabsTrigger value="text">Text</TabsTrigger>
               <TabsTrigger value="images">Images & Video</TabsTrigger>
               <TabsTrigger value="link">Link</TabsTrigger>
               <TabsTrigger value="poll">Poll</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="text" className="flex-1 flex flex-col space-y-4">
+            <TabsContent value="text" className="flex-1 flex flex-col space-y-4 overflow-hidden min-h-0">
               {/* Title */}
-              <div className="space-y-2">
+              <div className="space-y-2 shrink-0">
                 <Input
                   placeholder="Title*"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="text-lg"
+                  maxLength={300}
                 />
                 <div className="text-right text-xs text-muted-foreground">
                   {title.length}/300
@@ -125,43 +126,47 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
               </div>
 
               {/* Tags */}
-              <Button variant="ghost" className="self-start text-muted-foreground">
-                Add tags
-              </Button>
+              <Input
+                placeholder="Add tags"
+                className="shrink-0"
+              />
 
               {/* Content Editor */}
-              <div className="flex-1 flex flex-col border rounded-lg">
+              <div className="flex-1 flex flex-col border rounded-lg overflow-hidden min-h-0">
                 {/* Formatting Toolbar */}
-                <div className="flex items-center space-x-1 p-2 border-b bg-muted/30">
+                <div className="flex items-center space-x-1 p-2 border-b bg-muted/30 shrink-0 overflow-x-auto">
                   {formatButtons.map((button, index) => (
                     <Button
                       key={index}
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 shrink-0"
+                      title={button.label}
                     >
                       <button.icon className="h-4 w-4" />
                     </Button>
                   ))}
-                  <div className="ml-auto">
-                    <Button variant="ghost" size="sm" className="text-xs">
+                  <div className="ml-auto shrink-0">
+                    <Button variant="ghost" size="sm" className="text-xs whitespace-nowrap">
                       Switch to Markdown Editor
                     </Button>
                   </div>
                 </div>
 
                 {/* Content Area */}
-                <Textarea
-                  placeholder="Body text (optional)"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="flex-1 min-h-[300px] border-0 resize-none focus-visible:ring-0"
-                />
+                <div className="flex-1 overflow-hidden">
+                  <Textarea
+                    placeholder="Body text (optional)"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    className="h-full w-full border-0 resize-none focus-visible:ring-0 rounded-none"
+                  />
+                </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="images" className="flex-1">
-              <div className="flex-1 flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+            <TabsContent value="images" className="flex-1 overflow-hidden">
+              <div className="h-full flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
                 <div className="text-center space-y-2">
                   <Image className="h-12 w-12 mx-auto text-muted-foreground" />
                   <p className="text-muted-foreground">Drag & drop images or videos</p>
@@ -170,14 +175,14 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
               </div>
             </TabsContent>
 
-            <TabsContent value="link" className="flex-1">
+            <TabsContent value="link" className="flex-1 overflow-auto">
               <div className="space-y-4">
                 <Input placeholder="URL" />
                 <Textarea placeholder="Description (optional)" className="min-h-[200px]" />
               </div>
             </TabsContent>
 
-            <TabsContent value="poll" className="flex-1">
+            <TabsContent value="poll" className="flex-1 overflow-auto">
               <div className="space-y-4">
                 <Input placeholder="Poll question" />
                 <div className="space-y-2">
@@ -190,7 +195,7 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
           </Tabs>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
+          <div className="flex justify-end space-x-3 pt-4 border-t shrink-0">
             <Button variant="outline" onClick={handleSaveDraft}>
               Save Draft
             </Button>
