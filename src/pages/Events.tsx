@@ -74,6 +74,20 @@ export default function Events() {
     },
   ];
 
+  // Filter events based on search and subject
+  const filteredEvents = events.filter((event) => {
+    const matchesSearch = searchQuery === '' || 
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.subject.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesSubject = selectedSubject === 'all' || 
+      event.subject.toLowerCase().replace(' ', '-') === selectedSubject;
+
+    return matchesSearch && matchesSubject;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -122,7 +136,7 @@ export default function Events() {
 
       {/* Events Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {events.map((event) => (
+        {filteredEvents.map((event) => (
           <Card key={event.id} className="hover:shadow-custom-lg transition-shadow">
             <div className="aspect-video bg-gradient-subtle rounded-t-lg flex items-center justify-center">
               <Calendar className="h-12 w-12 text-primary" />

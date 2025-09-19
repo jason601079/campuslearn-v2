@@ -33,7 +33,6 @@ export default function Tutors() {
       subjects: ['Mathematics', 'Statistics'],
       rating: 4.9,
       sessions: 156,
-      price: 45,
       availability: 'Available Now',
       location: 'Campus Library',
       image: '/api/placeholder/100/100',
@@ -46,7 +45,6 @@ export default function Tutors() {
       subjects: ['Computer Science', 'Programming'],
       rating: 4.8,
       sessions: 203,
-      price: 55,
       availability: 'Available Tomorrow',
       location: 'CS Building',
       image: '/api/placeholder/100/100',
@@ -59,7 +57,6 @@ export default function Tutors() {
       subjects: ['Chemistry', 'Biology'],
       rating: 4.7,
       sessions: 89,
-      price: 40,
       availability: 'Available Friday',
       location: 'Science Lab',
       image: '/api/placeholder/100/100',
@@ -72,7 +69,6 @@ export default function Tutors() {
       subjects: ['Physics', 'Engineering'],
       rating: 4.9,
       sessions: 134,
-      price: 50,
       availability: 'Available Today',
       location: 'Physics Building',
       image: '/api/placeholder/100/100',
@@ -80,6 +76,20 @@ export default function Tutors() {
       specialties: ['Quantum Mechanics', 'Thermodynamics', 'Electromagnetism']
     },
   ];
+
+  // Filter tutors based on search and subject
+  const filteredTutors = tutors.filter((tutor) => {
+    const matchesSearch = searchQuery === '' || 
+      tutor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tutor.subjects.some(subject => subject.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      tutor.specialties.some(specialty => specialty.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      tutor.bio.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesSubject = selectedSubject === 'all' || 
+      tutor.subjects.some(subject => subject.toLowerCase().replace(' ', '-') === selectedSubject);
+
+    return matchesSearch && matchesSubject;
+  });
 
   return (
     <div className="space-y-6">
@@ -111,13 +121,17 @@ export default function Tutors() {
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="All Subjects" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Subjects</SelectItem>
-                <SelectItem value="mathematics">Mathematics</SelectItem>
-                <SelectItem value="computer-science">Computer Science</SelectItem>
-                <SelectItem value="chemistry">Chemistry</SelectItem>
-                <SelectItem value="physics">Physics</SelectItem>
-              </SelectContent>
+                <SelectContent>
+                  <SelectItem value="all">All Subjects</SelectItem>
+                  <SelectItem value="mathematics">Mathematics</SelectItem>
+                  <SelectItem value="computer-science">Computer Science</SelectItem>
+                  <SelectItem value="programming">Programming</SelectItem>
+                  <SelectItem value="chemistry">Chemistry</SelectItem>
+                  <SelectItem value="biology">Biology</SelectItem>
+                  <SelectItem value="physics">Physics</SelectItem>
+                  <SelectItem value="engineering">Engineering</SelectItem>
+                  <SelectItem value="statistics">Statistics</SelectItem>
+                </SelectContent>
             </Select>
             <Button variant="outline">
               <Filter className="mr-2 h-4 w-4" />
@@ -129,7 +143,7 @@ export default function Tutors() {
 
       {/* Tutors List */}
       <div className="grid gap-6">
-        {tutors.map((tutor) => (
+        {filteredTutors.map((tutor) => (
           <Card key={tutor.id} className="hover:shadow-custom-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start space-x-4">
@@ -150,15 +164,6 @@ export default function Tutors() {
                           </Badge>
                         ))}
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {/* View profile logic */}}
-                      >
-                        View Profile
-                      </Button>
                     </div>
                   </div>
                   

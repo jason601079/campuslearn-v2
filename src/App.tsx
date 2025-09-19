@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Events from "./pages/Events";
 import Tutors from "./pages/Tutors";
 import Forum from "./pages/Forum";
+import ForumPost from "./pages/ForumPost";
 import Messages from "./pages/Messages";
 import Resources from "./pages/Resources";
 import AITutor from "./pages/AITutor";
@@ -48,6 +49,7 @@ const AppRoutes = () => {
         <Route path="/events" element={<Events />} />
         <Route path="/tutors" element={<Tutors />} />
         <Route path="/forum" element={<Forum />} />
+        <Route path="/forum/post" element={<ForumPost />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/resources/:id" element={<ResourceDetail />} />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function Forum() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [recentEngagedPosts, setRecentEngagedPosts] = useState<any[]>([]);
@@ -182,7 +184,10 @@ export default function Forum() {
                         )}
                       </div>
 
-                      <h3 className="font-medium text-foreground hover:text-primary cursor-pointer mb-2 line-clamp-2">
+                      <h3 
+                        className="font-medium text-foreground hover:text-primary cursor-pointer mb-2 line-clamp-2"
+                        onClick={() => navigate('/forum/post')}
+                      >
                         {post.title}
                       </h3>
 
