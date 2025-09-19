@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ import {
 export default function Forum() {
   const [searchQuery, setSearchQuery] = useState('');
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [recentEngagedPosts, setRecentEngagedPosts] = useState<any[]>([]);
 
   const forumPosts = [
     {
@@ -75,43 +76,22 @@ export default function Forum() {
     },
   ];
 
-  const categories = [
-    { name: 'Mathematics', count: 45, color: 'bg-primary' },
-    { name: 'Computer Science', count: 38, color: 'bg-secondary' },
-    { name: 'Chemistry', count: 22, color: 'bg-success' },
-    { name: 'Physics', count: 19, color: 'bg-warning' },
-    { name: 'General', count: 67, color: 'bg-muted' },
-  ];
+  // Handle post engagement tracking
+  const handlePostEngage = (post: any) => {
+    const newEngagement = {
+      ...post,
+      engagedAt: new Date().toISOString(),
+    };
+    
+    setRecentEngagedPosts(prev => {
+      const filtered = prev.filter(p => p.id !== post.id);
+      return [newEngagement, ...filtered].slice(0, 5);
+    });
+  };
 
-  const recentPosts = [
-    { 
-      id: 1, 
-      title: 'I want to create a small game for my girlfriend\'s birthday. Any suggestions or...', 
-      community: 'r/IndieDev',
-      timeAgo: '7 mo. ago',
-      upvotes: 10,
-      comments: 27,
-      thumbnail: '/api/placeholder/60/40'
-    },
-    { 
-      id: 2, 
-      title: 'Games that my long distance girlfriend and I could play together', 
-      community: 'r/gamingsuggestions',
-      timeAgo: '2 yr. ago',
-      upvotes: 114,
-      comments: 92,
-      thumbnail: null
-    },
-    { 
-      id: 3, 
-      title: 'I made a website for my girlfriend and I to play...', 
-      community: 'r/LDR',
-      timeAgo: '7 mo. ago',
-      upvotes: 88,
-      comments: 7,
-      thumbnail: '/api/placeholder/60/40'
-    },
-  ];
+  const clearRecentPosts = () => {
+    setRecentEngagedPosts([]);
+  };
 
   const trendingTopics = [
     { tag: 'finals-prep', count: 24 },
@@ -137,7 +117,7 @@ export default function Forum() {
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-6 lg:grid-cols-4">
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
           {/* Search and Tabs */}
@@ -218,7 +198,12 @@ export default function Forum() {
 
                       {/* Actions */}
                       <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                        <Button variant="ghost" size="sm" className="h-7 px-2 hover:bg-muted">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 px-2 hover:bg-muted"
+                          onClick={() => handlePostEngage(post)}
+                        >
                           <MessageCircle className="mr-1 h-3 w-3" />
                           {post.replies} Comments
                         </Button>
@@ -238,28 +223,7 @@ export default function Forum() {
           </div>
         </div>
 
-        {/* Left Sidebar - Categories */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Categories */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Categories</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {categories.map((category) => (
-                <div key={category.name} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${category.color}`} />
-                    <span className="font-medium">{category.name}</span>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {category.count}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
           {/* Trending Topics */}
           <Card>
             <CardHeader>
@@ -279,43 +243,46 @@ export default function Forum() {
               ))}
             </CardContent>
           </Card>
-        </div>
 
-        {/* Right Sidebar - Recent Posts */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Recent Posts */}
+          {/* Recent Engaged Posts */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Recent Posts</CardTitle>
-              <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+              <CardTitle className="text-lg">Recent Activity</CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary hover:text-primary/80"
+                onClick={clearRecentPosts}
+              >
                 Clear
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {recentPosts.map((post) => (
-                <div key={post.id} className="flex items-start space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-1 text-xs text-muted-foreground mb-1">
-                      <span className="font-medium">{post.community}</span>
-                      <span>•</span>
-                      <span>{post.timeAgo}</span>
-                    </div>
-                    <h4 className="text-sm font-medium line-clamp-2 mb-2">
-                      {post.title}
-                    </h4>
-                    <div className="flex items-center space-x-3 text-xs text-muted-foreground">
-                      <span>{post.upvotes} upvotes</span>
-                      <span>{post.comments} comments</span>
+              {recentEngagedPosts.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No recent activity. Engage with posts to see them here.
+                </p>
+              ) : (
+                recentEngagedPosts.map((post) => (
+                  <div key={`${post.id}-${post.engagedAt}`} className="flex items-start space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                    <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-1 text-xs text-muted-foreground mb-1">
+                        <span className="font-medium">{post.community}</span>
+                        <span>•</span>
+                        <span>{post.timestamp}</span>
+                      </div>
+                      <h4 className="text-sm font-medium line-clamp-2 mb-2">
+                        {post.title}
+                      </h4>
+                      <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                        <span>{post.upvotes - post.downvotes} upvotes</span>
+                        <span>{post.replies} comments</span>
+                      </div>
                     </div>
                   </div>
-                  {post.thumbnail && (
-                    <div className="w-12 h-8 bg-muted rounded overflow-hidden flex-shrink-0">
-                      <div className="w-full h-full bg-gradient-subtle" />
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
         </div>

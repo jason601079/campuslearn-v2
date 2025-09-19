@@ -152,8 +152,13 @@ export default function Tutors() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">${tutor.price}</p>
-                      <p className="text-xs text-muted-foreground">per hour</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {/* View profile logic */}}
+                      >
+                        View Profile
+                      </Button>
                     </div>
                   </div>
                   
