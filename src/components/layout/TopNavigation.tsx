@@ -43,14 +43,6 @@ export function TopNavigation({
 
         {/* Right Section - Actions */}
         <div className="flex items-center space-x-2">
-          {/* Notifications */}
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="h-5 w-5" />
-            {hasNotifications > 0 && <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
-                {hasNotifications}
-              </Badge>}
-          </Button>
-
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -90,15 +90,9 @@ export default function Events() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Events</h1>
-          <p className="text-muted-foreground">Discover upcoming academic events and workshops</p>
-        </div>
-        <Button className="bg-gradient-primary hover:opacity-90">
-          <Calendar className="mr-2 h-4 w-4" />
-          Create Event
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold">Events</h1>
+        <p className="text-muted-foreground">Discover upcoming academic events and workshops</p>
       </div>
 
       {/* Search and Filters */}
