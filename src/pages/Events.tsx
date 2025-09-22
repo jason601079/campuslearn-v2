@@ -181,10 +181,6 @@ export default function Events() {
                 <span className="text-sm font-medium text-muted-foreground">
                   by {event.organizer}
                 </span>
-                <div className="text-right">
-                  <p className="text-lg font-bold">${event.price}</p>
-                  <p className="text-xs text-muted-foreground">per person</p>
-                </div>
               </div>
               
               <div className="flex space-x-2">

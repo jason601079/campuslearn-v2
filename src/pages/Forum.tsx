@@ -152,18 +152,6 @@ export default function Forum() {
               <Card key={post.id} className="hover:shadow-custom-md transition-shadow border-l-2 border-l-transparent hover:border-l-primary">
                 <CardContent className="p-4">
                   <div className="flex items-start space-x-3">
-                    {/* Voting */}
-                    <div className="flex flex-col items-center space-y-1 min-w-[40px]">
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:text-orange-500">
-                        <ArrowUp className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {post.upvotes - post.downvotes}
-                      </span>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:text-blue-500">
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
-                    </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
@@ -173,15 +161,6 @@ export default function Forum() {
                         <span>Posted by u/{post.author}</span>
                         <span>•</span>
                         <span>{post.timestamp}</span>
-                        {post.isPinned && (
-                          <>
-                            <span>•</span>
-                            <div className="flex items-center text-green-600">
-                              <Pin className="h-3 w-3 mr-1" />
-                              <span>Pinned</span>
-                            </div>
-                          </>
-                        )}
                       </div>
 
                       <h3 
@@ -239,7 +218,11 @@ export default function Forum() {
             </CardHeader>
             <CardContent className="space-y-2">
               {trendingTopics.map((topic) => (
-                <div key={topic.tag} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                <div 
+                  key={topic.tag} 
+                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => setSearchQuery(topic.tag)}
+                >
                   <span className="text-sm font-medium">#{topic.tag}</span>
                   <Badge variant="outline" className="text-xs">
                     {topic.count}

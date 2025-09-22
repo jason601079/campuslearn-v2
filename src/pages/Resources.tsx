@@ -119,13 +119,9 @@ export default function Resources() {
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Learning Resources</h1>
+          <h1 className="text-3xl font-bold">My Resources</h1>
           <p className="text-muted-foreground">Access study materials, guides, and tools</p>
         </div>
-        <Button className="bg-gradient-primary hover:opacity-90">
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Resource
-        </Button>
       </div>
 
       {/* Search and Filters */}
