@@ -148,7 +148,13 @@ export default function Forum() {
 
           {/* Forum Posts */}
           <div className="space-y-2">
-            {forumPosts.map((post) => (
+            {forumPosts.filter(post => 
+              searchQuery === '' || 
+              post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              post.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+            ).map((post) => (
               <Card key={post.id} className="hover:shadow-custom-md transition-shadow border-l-2 border-l-transparent hover:border-l-primary">
                 <CardContent className="p-4">
                   <div className="flex items-start space-x-3">

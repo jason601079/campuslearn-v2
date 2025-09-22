@@ -34,7 +34,7 @@ const navigationItems = [
   { icon: BookOpen, label: 'Tutors', path: '/tutors' },
   { icon: MessageSquare, label: 'Forum', path: '/forum' },
   { icon: MessageCircle, label: 'Messages', path: '/messages' },
-  { icon: FileText, label: 'Resources', path: '/resources' },
+  { icon: FileText, label: 'My Resources', path: '/resources' },
   { icon: Calendar, label: 'Calendar', path: '/calendar' },
   { icon: Bot, label: 'AI Tutor', path: '/ai-tutor' },
   { icon: HelpCircle, label: 'FAQ', path: '/faq' },
