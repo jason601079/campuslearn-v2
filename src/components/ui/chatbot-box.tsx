@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -51,76 +52,29 @@ export function ChatbotBox({ className, resourceContent, resourceTitle }: Chatbo
     setIsLoading(true);
 
     try {
-      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resource-chat`;
-      
-      const response = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('resource-chat', {
+        body: {
           messages: newMessages.slice(1).map(m => ({
             role: m.type === 'user' ? 'user' : 'assistant',
             content: m.content,
           })),
           resourceContent: resourceContent || '',
           resourceTitle: resourceTitle || 'Untitled Resource',
-        }),
+        },
       });
 
-      if (!response.ok || !response.body) {
-        throw new Error('Failed to get AI response');
+      if (error) {
+        throw error;
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = '';
-      let streamDone = false;
-      let assistantContent = '';
-
+      // Handle the response
       const aiMessageId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, {
         id: aiMessageId,
         type: 'ai',
-        content: '',
+        content: data?.response || 'Sorry, I could not generate a response.',
         timestamp: new Date(),
       }]);
-
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':') || line.trim() === '') continue;
-          if (!line.startsWith('data: ')) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') {
-            streamDone = true;
-            break;
-          }
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              assistantContent += content;
-              setMessages(prev => prev.map(m => 
-                m.id === aiMessageId ? { ...m, content: assistantContent } : m
-              ));
-            }
-          } catch {
-            textBuffer = line + '\n' + textBuffer;
-            break;
-          }
-        }
-      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       toast({

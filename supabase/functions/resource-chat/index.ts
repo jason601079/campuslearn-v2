@@ -42,7 +42,6 @@ Answer questions specifically about this resource. Keep your answers clear, conc
           },
           ...messages,
         ],
-        stream: true,
       }),
     });
 
@@ -76,9 +75,15 @@ Answer questions specifically about this resource. Keep your answers clear, conc
       );
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
+    const data = await response.json();
+    const aiResponse = data.choices[0].message.content;
+
+    return new Response(
+      JSON.stringify({ response: aiResponse }), 
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (e) {
     console.error("Resource chat error:", e);
     return new Response(
