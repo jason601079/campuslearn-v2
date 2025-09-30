@@ -233,7 +233,10 @@ export default function ResourceDetail() {
       </Card>
 
       {/* AI Chatbot Box */}
-      <ChatbotBox />
+      <ChatbotBox 
+        resourceContent={resource.content}
+        resourceTitle={resource.title}
+      />
     </div>
   );
 }
