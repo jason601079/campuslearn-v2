@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,14 +13,24 @@ interface Message {
   timestamp: Date;
 }
 
-const suggestedQuestions = [
-  "Are there any resources to learn about 'Bazel'?",
-  "Explain the difference between 'pass by value' and 'pass by reference'.",
-  "What are the key features of 'Quarkus'?",
-  "What is the difference between 'Method Overloading' and 'Method Overriding'?",
-];
-
 export default function AITutor() {
+  useEffect(() => {
+    // Load Botpress chatbot scripts
+    const script1 = document.createElement('script');
+    script1.src = 'https://cdn.botpress.cloud/webchat/v3.3/inject.js';
+    document.body.appendChild(script1);
+
+    const script2 = document.createElement('script');
+    script2.src = 'https://files.bpcontent.cloud/2025/09/30/10/20250930105052-R0WWRT0P.js';
+    script2.defer = true;
+    document.body.appendChild(script2);
+
+    return () => {
+      // Cleanup scripts on unmount
+      document.body.removeChild(script1);
+      document.body.removeChild(script2);
+    };
+  }, []);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -56,9 +66,6 @@ export default function AITutor() {
     }, 1000);
   };
 
-  const handleSuggestedQuestion = (question: string) => {
-    setInputValue(question);
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -112,26 +119,6 @@ export default function AITutor() {
               ))}
             </div>
           </ScrollArea>
-
-          {messages.length === 1 && (
-            <div className="p-4 border-t bg-muted/20">
-              <p className="text-sm text-muted-foreground mb-3">
-                Some questions you might have about this roadmap:
-              </p>
-              <div className="space-y-2">
-                {suggestedQuestions.map((question, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="w-full justify-start text-left h-auto p-3 whitespace-normal"
-                    onClick={() => handleSuggestedQuestion(question)}
-                  >
-                    {question}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="p-4 border-t">
             <div className="flex space-x-2">
