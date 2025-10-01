@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { Bot, Sparkles } from 'lucide-react';
 
 declare global {
@@ -8,36 +8,34 @@ declare global {
 }
 
 export default function AITutor() {
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     // Load Botpress chatbot scripts
     const script1 = document.createElement('script');
     script1.src = 'https://cdn.botpress.cloud/webchat/v3.3/inject.js';
+    script1.async = true;
+    
     script1.onload = () => {
       const script2 = document.createElement('script');
       script2.src = 'https://files.bpcontent.cloud/2025/09/30/10/20250930105052-R0WWRT0P.js';
-      script2.onload = () => {
-        // Initialize the chatbot
-        if (window.botpressWebChat) {
-          window.botpressWebChat.init({
-            composerPlaceholder: 'Ask me anything...',
-            hideWidget: true, // Hide the default floating widget
-          });
-        }
-      };
+      script2.async = true;
       document.body.appendChild(script2);
     };
+    
     document.body.appendChild(script1);
 
     return () => {
       // Cleanup scripts on unmount
-      if (document.body.contains(script1)) {
-        document.body.removeChild(script1);
-      }
-      const script2 = document.querySelector('script[src="https://files.bpcontent.cloud/2025/09/30/10/20250930105052-R0WWRT0P.js"]');
-      if (script2 && document.body.contains(script2)) {
-        document.body.removeChild(script2);
+      const scripts = document.querySelectorAll('script[src*="botpress"]');
+      scripts.forEach(script => {
+        if (document.body.contains(script)) {
+          document.body.removeChild(script);
+        }
+      });
+      
+      // Remove the webchat widget if it exists
+      const webchat = document.querySelector('#bp-web-widget-container');
+      if (webchat) {
+        webchat.remove();
       }
     };
   }, []);
@@ -51,16 +49,9 @@ export default function AITutor() {
           <Sparkles className="h-6 w-6 text-yellow-500" />
         </div>
         <p className="text-muted-foreground">
-          Get instant help with your studies. Ask questions about any topic!
+          Get instant help with your studies. Click the chat icon in the bottom right to start!
         </p>
       </div>
-      
-      <iframe
-        src="https://webchat.botpress.cloud/2ab9bd25-ce6e-4b10-9b2a-7ab7b9a1e9a8"
-        className="flex-1 w-full max-w-4xl mx-auto border-0 rounded-lg"
-        style={{ minHeight: '600px' }}
-        title="AI Tutor Chatbot"
-      />
     </div>
   );
 }
