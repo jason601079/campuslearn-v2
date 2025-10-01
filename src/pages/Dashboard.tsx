@@ -152,6 +152,27 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Study Vibes - Music Player */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Star className="mr-2 h-5 w-5" />
+            Study Vibes
+          </CardTitle>
+          <CardDescription>Your current study soundtrack</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <iframe 
+            allow="autoplay *; encrypted-media *;" 
+            frameBorder="0" 
+            height="150" 
+            style={{ width: '100%', maxWidth: '660px', overflow: 'hidden', background: 'transparent' }}
+            sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" 
+            src="https://embed.music.apple.com/za/album/endless/1830597627?i=1830597946"
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
