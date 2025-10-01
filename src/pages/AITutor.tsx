@@ -18,12 +18,11 @@ export default function AITutor() {
       const script2 = document.createElement('script');
       script2.src = 'https://files.bpcontent.cloud/2025/09/30/10/20250930105052-R0WWRT0P.js';
       script2.onload = () => {
-        // Initialize the chatbot in the container
-        if (window.botpressWebChat && chatContainerRef.current) {
+        // Initialize the chatbot
+        if (window.botpressWebChat) {
           window.botpressWebChat.init({
-            hideWidget: false,
-            showConversationsButton: false,
             composerPlaceholder: 'Ask me anything...',
+            hideWidget: true, // Hide the default floating widget
           });
         }
       };
@@ -56,11 +55,11 @@ export default function AITutor() {
         </p>
       </div>
       
-      <div 
-        ref={chatContainerRef}
-        id="botpress-webchat-container" 
-        className="flex-1 w-full max-w-4xl mx-auto"
+      <iframe
+        src="https://webchat.botpress.cloud/2ab9bd25-ce6e-4b10-9b2a-7ab7b9a1e9a8"
+        className="flex-1 w-full max-w-4xl mx-auto border-0 rounded-lg"
         style={{ minHeight: '600px' }}
+        title="AI Tutor Chatbot"
       />
     </div>
   );
