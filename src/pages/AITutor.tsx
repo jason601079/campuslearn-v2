@@ -17,6 +17,9 @@ export default function AITutor() {
       // Scripts already loaded, just show the widget
       if (window.botpressWebChat) {
         window.botpressWebChat.sendEvent({ type: 'show' });
+        setTimeout(() => {
+          window.botpressWebChat?.sendEvent({ type: 'open' });
+        }, 300);
       }
       return;
     }
@@ -33,12 +36,21 @@ export default function AITutor() {
       
       script2.onload = () => {
         console.log('Botpress scripts loaded successfully');
-        // Try to show the widget after a short delay
+        // Show the widget, then force-open after a short delay
         setTimeout(() => {
           if (window.botpressWebChat) {
             window.botpressWebChat.sendEvent({ type: 'show' });
+            window.botpressWebChat.sendEvent({ type: 'open' });
           }
-        }, 1000);
+        }, 800);
+        // Retry once more in case initialization is slow
+        setTimeout(() => {
+          try {
+            window.botpressWebChat?.sendEvent({ type: 'open' });
+          } catch (e) {
+            console.warn('Botpress open retry failed', e);
+          }
+        }, 2000);
       };
       
       script2.onerror = () => {

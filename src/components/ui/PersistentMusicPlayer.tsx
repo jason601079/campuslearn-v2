@@ -52,36 +52,37 @@ export function PersistentMusicPlayer() {
         </div>
       </div>
       
-      {!isMinimized && (
-        <div className="p-4 flex flex-col md:flex-row gap-4 max-h-[70vh] overflow-auto">
-          {/* Apple Music */}
-          <iframe
-            allow="autoplay *; encrypted-media *;"
-            frameBorder="0"
-            height="352"
-            style={{
-              width: "100%",
-              maxWidth: "660px",
-              overflow: "hidden",
-              background: "transparent",
-            }}
-            sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
-            src="https://embed.music.apple.com/za/playlist/j/pl.u-2aoqXxaFkGdD9Wv"
-          />
+      <div className={cn(
+        "p-4 flex flex-col md:flex-row gap-4 max-h-[70vh] overflow-auto",
+        isMinimized && "h-0 max-h-0 p-0 opacity-0 pointer-events-none overflow-hidden"
+      )}>
+        {/* Apple Music */}
+        <iframe
+          allow="autoplay *; encrypted-media *;"
+          frameBorder="0"
+          height="352"
+          style={{
+            width: "100%",
+            maxWidth: "660px",
+            overflow: "hidden",
+            background: "transparent",
+          }}
+          sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
+          src="https://embed.music.apple.com/za/playlist/j/pl.u-2aoqXxaFkGdD9Wv"
+        />
 
-          {/* Spotify */}
-          <iframe
-            style={{ borderRadius: "12px" }}
-            src="https://open.spotify.com/embed/playlist/7uH2lGr6eNzQvKvUeJJWaJ?utm_source=generator"
-            width="100%"
-            height="352"
-            frameBorder="0"
-            allowFullScreen
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-          />
-        </div>
-      )}
+        {/* Spotify */}
+        <iframe
+          style={{ borderRadius: "12px" }}
+          src="https://open.spotify.com/embed/playlist/7uH2lGr6eNzQvKvUeJJWaJ?utm_source=generator"
+          width="100%"
+          height="352"
+          frameBorder="0"
+          allowFullScreen
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+        />
+      </div>
     </Card>
   );
 }
