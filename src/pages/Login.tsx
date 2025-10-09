@@ -31,7 +31,19 @@ const Login = () => {
           title: 'Login Successful',
           description: 'Welcome to CampusLearn!',
         });
-        navigate('/');
+        
+        // Get user data to check if admin
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          const decoded = JSON.parse(atob(token.split('.')[1]));
+          if (decoded.roles && decoded.roles.includes('ADMIN')) {
+            navigate('/admin');
+          } else {
+            navigate('/');
+          }
+        } else {
+          navigate('/');
+        }
       } else {
         toast({
           title: 'Login Failed',
@@ -63,7 +75,8 @@ const Login = () => {
         title: 'Microsoft Login Successful',
         description: 'Welcome to CampusLearn!',
       });
-      navigate('/');
+      // Microsoft user is admin, redirect to admin panel
+      navigate('/admin');
     }
   };
 
