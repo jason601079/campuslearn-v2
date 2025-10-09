@@ -109,15 +109,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Manual login has no authentication - accept any credentials
+      // Different roles based on email for demo purposes
+      const isAdmin = identifier === 'admin@campus.edu';
+      const isTutor = identifier === 'tutor@campus.edu';
+      
       setUser({
         id: identifier,
         name: identifier.split('@')[0] || 'User',
         identifier,
         email: identifier,
         avatar: '',
-        isAdmin: false,
-        isTutor: false,
-        tutorApplicationStatus: 'none',
+        isAdmin,
+        isTutor,
+        tutorApplicationStatus: isTutor ? 'approved' : 'none',
       });
       return true;
     } catch (err) {
