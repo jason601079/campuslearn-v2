@@ -13,7 +13,7 @@ export default function Resources() {
   const resources = [{
     id: 1,
     title: 'Calculus Cheat Sheet',
-    description: 'A comprehensive reference guide covering fundamental calculus concepts including limits, derivatives, integrals, and their applications. Features step-by-step examples of integration techniques such as substitution and integration by parts, plus detailed derivative rules for trigonometric, exponential, and logarithmic functions.',
+    description: 'Complete reference for integration and differentiation',
     type: 'document',
     category: 'Mathematics',
     author: 'Dr. Sarah Wilson',
@@ -25,7 +25,7 @@ export default function Resources() {
   }, {
     id: 2,
     title: 'Data Structures Video Tutorial',
-    description: 'An in-depth video series exploring essential data structures in computer science. Covers array manipulation, linked list operations, binary trees, AVL trees, and graph traversal algorithms. Includes practical coding examples in Python and Java with time complexity analysis for each operation.',
+    description: 'Comprehensive video series on arrays, linked lists, and trees',
     type: 'video',
     category: 'Computer Science',
     author: 'Prof. Mike Chen',
@@ -37,7 +37,7 @@ export default function Resources() {
   }, {
     id: 3,
     title: 'Organic Chemistry Reaction Map',
-    description: 'A visual flowchart mapping major organic chemistry reactions including nucleophilic substitutions, elimination reactions, addition reactions, and oxidation-reduction processes. Shows mechanisms, reagents, and conditions needed for each transformation with arrows indicating electron flow.',
+    description: 'Visual guide to common organic chemistry reactions',
     type: 'image',
     category: 'Chemistry',
     author: 'Dr. Emma Rodriguez',
@@ -49,7 +49,7 @@ export default function Resources() {
   }, {
     id: 4,
     title: 'Physics Problem Solver',
-    description: 'An interactive web-based tool designed to solve classical mechanics problems involving kinematics, dynamics, energy conservation, and momentum. Input your known variables and the solver automatically calculates unknowns while showing detailed work steps. Supports units conversion and vector operations.',
+    description: 'Interactive web tool for solving physics problems',
     type: 'link',
     category: 'Physics',
     author: 'Physics Department',
@@ -192,14 +192,6 @@ export default function Resources() {
                             
                             <div className="flex flex-col md:flex-row md:items-center md:space-x-4 mt-2 text-xs md:text-sm text-muted-foreground space-y-1 md:space-y-0">
                               <span className="text-center md:text-left">by {resource.author}</span>
-                              <div className="flex items-center justify-center md:justify-start">
-                                <Star className="mr-1 h-3 w-3 fill-current text-warning" />
-                                {resource.rating}
-                              </div>
-                              <div className="flex items-center justify-center md:justify-start">
-                                <Download className="mr-1 h-3 w-3" />
-                                {resource.downloads} downloads
-                              </div>
                               <span className="text-center md:text-left">{resource.size}</span>
                             </div>
                           </div>

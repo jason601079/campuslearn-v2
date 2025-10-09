@@ -68,13 +68,13 @@ export function PersistentMusicPlayer() {
             background: "transparent",
           }}
           sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
-          src="https://embed.music.apple.com/za/playlist/j/pl.u-2aoqXxaFkGdD9Wv"
+          src="https://embed.music.apple.com/za/playlist/hitting-the-books/pl.5aedf81bd67d478fa0a17fd58a95a2bc"
         />
 
         {/* Spotify */}
         <iframe
           style={{ borderRadius: "12px" }}
-          src="https://open.spotify.com/embed/playlist/7uH2lGr6eNzQvKvUeJJWaJ?utm_source=generator"
+          src="https://open.spotify.com/embed/playlist/37i9dQZF1EIfMdgv54LYV9?utm_source=generator"
           width="100%"
           height="352"
           frameBorder="0"
@@ -82,6 +82,16 @@ export function PersistentMusicPlayer() {
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
         />
+
+        {/* YouTube Music (via YouTube playlist embed) */}
+    <iframe
+      width="100%"
+      height="352"
+      src="https://www.youtube.com/embed?listType=playlist&list=PLjPNN6q0vqfKP7DlR4i0A5evoAd9PYv_l"
+      frameBorder="0"
+      allow="autoplay; encrypted-media; clipboard-write; fullscreen; picture-in-picture"
+      allowFullScreen
+    />
       </div>
     </Card>
   );

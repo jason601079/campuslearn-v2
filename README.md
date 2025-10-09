@@ -1,73 +1,39 @@
-# Welcome to your Lovable project
+Tutor Platform Frontend
 
-## Project info
+This is the front end of the Tutor Platform, which was built using React. The platform provides students, tutors, and administrators with an interactive interface to manage courses, communication, events, and resources.
 
-**URL**: https://lovable.dev/projects/498d610e-16df-4b26-a121-978b3c378fee
+🚀 Getting Started
+To set up the project locally:
 
-## How can I edit this code?
+# Clone the repository
+git clone <your-repo-url>
 
-There are several ways of editing your application.
+# Navigate into the project folder
+cd <project-folder>
 
-**Use Lovable**
+# Install dependencies
+npm install
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/498d610e-16df-4b26-a121-978b3c378fee) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
-```
 
-**Edit a file directly in GitHub**
+📌 Features
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Dashboard – Overview of key platform activities and quick access.
+Courses/Tutors – Browse available courses and connect with tutors.
+Forum – Engage in community discussions and Q&A.
+Messaging System – Direct communication between students and tutors.
+Resources – Access study materials and shared documents.
+Calendar/Events – Keep track of upcoming classes, deadlines, and events.
+AI Tutor – Get instant academic assistance powered by AI.
+FAQ – Common questions and answers for quick support.
+Tutor Dashboard – Tools for tutors to manage their classes and students.
+Admin Panel – Administrative controls for managing users and platform content.
+Profile & Settings – Personalize your account and update settings.
 
-**Use GitHub Codespaces**
+🛠️ Tech Stack
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/498d610e-16df-4b26-a121-978b3c378fee) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+React (Frontend framework)
+Vite (Development build tool)
+JavaScript/TypeScript (depending on your setup)
+npm (Package manager)

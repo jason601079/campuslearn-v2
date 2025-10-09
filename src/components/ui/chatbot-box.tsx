@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -18,73 +16,43 @@ interface Message {
 
 interface ChatbotBoxProps {
   className?: string;
-  resourceContent?: string;
-  resourceTitle?: string;
 }
 
-export function ChatbotBox({ className, resourceContent, resourceTitle }: ChatbotBoxProps) {
+export function ChatbotBox({ className }: ChatbotBoxProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       type: 'ai',
-      content: 'Hello! I can help you understand this resource. Ask me any questions about it.',
+      content: 'Hello, how can I help you today?',
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSendMessage = () => {
+    if (!inputValue.trim()) return;
 
-    const userMessage: Message = {
+    const newMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
       content: inputValue,
       timestamp: new Date()
     };
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, newMessage]);
     setInputValue('');
-    setIsLoading(true);
 
-    try {
-      const { data, error } = await supabase.functions.invoke('resource-chat', {
-        body: {
-          messages: newMessages.slice(1).map(m => ({
-            role: m.type === 'user' ? 'user' : 'assistant',
-            content: m.content,
-          })),
-          resourceContent: resourceContent || '',
-          resourceTitle: resourceTitle || 'Untitled Resource',
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      // Handle the response
-      const aiMessageId = (Date.now() + 1).toString();
-      setMessages(prev => [...prev, {
-        id: aiMessageId,
+    // Simulate AI response
+    setTimeout(() => {
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: data?.response || 'Sorry, I could not generate a response.',
-        timestamp: new Date(),
-      }]);
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      toast({
-        title: "Error",
-        description: "Failed to get AI response. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+        content: "I'm here to help! However, I'm just a demo interface right now. The actual AI functionality will be implemented later.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiResponse]);
+    }, 1000);
   };
 
   if (!isExpanded) {
@@ -180,7 +148,7 @@ export function ChatbotBox({ className, resourceContent, resourceTitle }: Chatbo
               />
               <Button 
                 onClick={handleSendMessage} 
-                disabled={!inputValue.trim() || isLoading}
+                disabled={!inputValue.trim()}
                 size="sm"
                 className="px-3"
               >

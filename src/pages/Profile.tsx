@@ -9,7 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { User, Mail, Phone, MapPin, GraduationCap, LogOut, Upload } from 'lucide-react';
+import { User as UserIcon, Mail, Phone, MapPin, GraduationCap, LogOut, Upload } from 'lucide-react';
+import type { User } from '@/context/AuthContext';
+import { useEffect } from 'react';
+
 
 const Profile = () => {
   const { user, logout, updateUser } = useAuth();
@@ -25,6 +28,8 @@ const Profile = () => {
     availability: ''
   });
 
+  const [subscribed, setSubscribed] = useState<boolean>(false);
+
   const handleLogout = () => {
     logout();
     toast({
@@ -36,7 +41,7 @@ const Profile = () => {
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         toast({
           title: 'File too large',
           description: 'Please select an image smaller than 5MB.',
@@ -60,11 +65,21 @@ const Profile = () => {
   };
 
   const handleSaveProfile = () => {
-    if (photoPreview) {
-      updateUser({ avatar: profilePhoto });
-    }
+    const firstNameInput = (document.getElementById('firstName') as HTMLInputElement).value;
+    const lastNameInput = (document.getElementById('lastName') as HTMLInputElement).value;
+    const emailInput = (document.getElementById('email') as HTMLInputElement).value;
+    const phoneInput = (document.getElementById('phone') as HTMLInputElement).value;
+    const locationInput = (document.getElementById('location') as HTMLInputElement).value;
+
+    const updates: Partial<User> = {
+      name: `${firstNameInput} ${lastNameInput}`.trim(),
+      email: emailInput,
+      phoneNumber: phoneInput,
+      location: locationInput,
+    };
+
+    updateUser(updates);
     setIsEditing(false);
-    setPhotoPreview('');
     toast({
       title: 'Profile Updated',
       description: 'Your profile has been successfully updated.',
@@ -83,7 +98,7 @@ const Profile = () => {
     if (user?.isTutor) {
       return <Badge variant="secondary" className="bg-green-100 text-green-800">Active Tutor</Badge>;
     }
-    
+
     switch (user?.tutorApplicationStatus) {
       case 'pending':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Application Pending</Badge>;
@@ -100,6 +115,34 @@ const Profile = () => {
     return <div>Loading...</div>;
   }
 
+  useEffect(() => {
+  const fetchSubscription = async () => {
+    try {
+      const res = await fetch('http://localhost:9090/notifications/subscribed', {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+        },
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch subscription status');
+
+      const data = await res.json();
+      setSubscribed(data.subscribed ?? false); // set default false if null
+    } catch (err) {
+      console.error('Failed to fetch subscription status', err);
+      toast({
+        title: 'Error',
+        description: 'Could not fetch subscription status.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  fetchSubscription();
+}, []);
+
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -115,13 +158,12 @@ const Profile = () => {
         <Card className="shadow-custom-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+              <UserIcon className="h-5 w-5" />
               Personal Information
             </CardTitle>
-            <CardDescription>
-              Manage your account details and preferences
-            </CardDescription>
+            <CardDescription>Manage your account details and preferences</CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-6">
             {/* Avatar Section */}
             <div className="flex items-center space-x-4">
@@ -165,49 +207,27 @@ const Profile = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    value={user.name.split(' ')[0]}
-                    disabled={!isEditing}
-                  />
+                  <Input id="firstName" value={user.name.split(' ')[0]} disabled={!isEditing} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    value={user.name.split(' ')[1] || ''}
-                    disabled={!isEditing}
-                  />
+                  <Input id="lastName" value={user.name.split(' ')[1] || ''} disabled={!isEditing} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={user.email}
-                  disabled={!isEditing}
-                  className="flex items-center gap-2"
-                />
+                <Input id="email" type="email" value={user.email} disabled={!isEditing} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  placeholder="+27 (0) 11 123-4567"
-                  disabled={!isEditing}
-                />
+                <Input id="phone" defaultValue={user.phoneNumber || ''} disabled={!isEditing} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="location">Campus Location</Label>
-                <Input
-                  id="location"
-                  placeholder="Pretoria Campus"
-                  disabled={!isEditing}
-                />
+                <Input id="location" defaultValue={user.location || ''} disabled={!isEditing} />
               </div>
             </div>
 
@@ -215,11 +235,14 @@ const Profile = () => {
               {isEditing || photoPreview ? (
                 <>
                   <Button onClick={handleSaveProfile}>Save Changes</Button>
-                  <Button variant="outline" onClick={() => {
-                    setIsEditing(false);
-                    setPhotoPreview('');
-                    setProfilePhoto(user.avatar || '');
-                  }}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setPhotoPreview('');
+                      setProfilePhoto(user.avatar || '');
+                    }}
+                  >
                     Cancel
                   </Button>
                 </>
@@ -231,77 +254,59 @@ const Profile = () => {
         </Card>
 
         {/* Tutor Application */}
-        {!user.isTutor && (
+        {(!user.isTutor && user.tutorApplicationStatus !== 'pending') && (
           <Card className="shadow-custom-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5" />
                 Become a Tutor
               </CardTitle>
-              <CardDescription>
-                Apply to become a tutor and help other students succeed
-              </CardDescription>
+              <CardDescription>Apply to become a tutor and help other students succeed</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {user.tutorApplicationStatus === 'none' || !user.tutorApplicationStatus ? (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="subjects">Subjects You Can Tutor</Label>
-                    <Input
-                      id="subjects"
-                      placeholder="e.g., Mathematics, Computer Science, Physics"
-                      value={tutorApplication.subjects}
-                      onChange={(e) => setTutorApplication({...tutorApplication, subjects: e.target.value})}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="subjects">Subjects You Can Tutor</Label>
+                <Input
+                  id="subjects"
+                  placeholder="e.g., Mathematics, Computer Science, Physics"
+                  value={tutorApplication.subjects}
+                  onChange={(e) => setTutorApplication({ ...tutorApplication, subjects: e.target.value })}
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="qualifications">Qualifications</Label>
-                    <Textarea
-                      id="qualifications"
-                      placeholder="List your relevant qualifications and certifications"
-                      value={tutorApplication.qualifications}
-                      onChange={(e) => setTutorApplication({...tutorApplication, qualifications: e.target.value})}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="qualifications">Qualifications</Label>
+                <Textarea
+                  id="qualifications"
+                  placeholder="List your relevant qualifications and certifications"
+                  value={tutorApplication.qualifications}
+                  onChange={(e) => setTutorApplication({ ...tutorApplication, qualifications: e.target.value })}
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="experience">Teaching/Tutoring Experience</Label>
-                    <Textarea
-                      id="experience"
-                      placeholder="Describe your teaching or tutoring experience"
-                      value={tutorApplication.experience}
-                      onChange={(e) => setTutorApplication({...tutorApplication, experience: e.target.value})}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="experience">Teaching/Tutoring Experience</Label>
+                <Textarea
+                  id="experience"
+                  placeholder="Describe your teaching or tutoring experience"
+                  value={tutorApplication.experience}
+                  onChange={(e) => setTutorApplication({ ...tutorApplication, experience: e.target.value })}
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="availability">Availability</Label>
-                    <Textarea
-                      id="availability"
-                      placeholder="When are you available to tutor? (days, times, etc.)"
-                      value={tutorApplication.availability}
-                      onChange={(e) => setTutorApplication({...tutorApplication, availability: e.target.value})}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="availability">Availability</Label>
+                <Textarea
+                  id="availability"
+                  placeholder="When are you available to tutor? (days, times, etc.)"
+                  value={tutorApplication.availability}
+                  onChange={(e) => setTutorApplication({ ...tutorApplication, availability: e.target.value })}
+                />
+              </div>
 
-                  <Button onClick={handleTutorApplication} className="w-full">
-                    Submit Tutor Application
-                  </Button>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  {getTutorStatusBadge()}
-                  <p className="mt-2 text-muted-foreground">
-                    {user.tutorApplicationStatus === 'pending' && 
-                      "Your application is being reviewed. We'll notify you once it's processed."}
-                    {user.tutorApplicationStatus === 'approved' && 
-                      "Your application has been approved! You can now access the tutor dashboard."}
-                    {user.tutorApplicationStatus === 'rejected' && 
-                      "Your application was not approved at this time. You can reapply in 30 days."}
-                  </p>
-                </div>
-              )}
+              <Button onClick={handleTutorApplication} className="w-full">
+                Submit Tutor Application
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -310,20 +315,12 @@ const Profile = () => {
         <Card className="shadow-custom-md">
           <CardHeader>
             <CardTitle>Security & Privacy</CardTitle>
-            <CardDescription>
-              Manage your account security settings
-            </CardDescription>
+            <CardDescription>Manage your account security settings</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button variant="outline" className="w-full">
-              Change Password
-            </Button>
-            <Button variant="outline" className="w-full">
-              Two-Factor Authentication
-            </Button>
-            <Button variant="outline" className="w-full">
-              Privacy Settings
-            </Button>
+            <Button variant="outline" className="w-full">Change Password</Button>
+            <Button variant="outline" className="w-full">Two-Factor Authentication</Button>
+            <Button variant="outline" className="w-full">Privacy Settings</Button>
           </CardContent>
         </Card>
 
@@ -331,15 +328,52 @@ const Profile = () => {
         <Card className="shadow-custom-md">
           <CardHeader>
             <CardTitle>Notifications</CardTitle>
-            <CardDescription>
-              Manage how you receive notifications
-            </CardDescription>
+            <CardDescription>Manage how you receive notifications</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <Label htmlFor="email-notifications">Email Notifications</Label>
-              <input type="checkbox" id="email-notifications" defaultChecked />
+              <input
+                type="checkbox"
+                checked={subscribed}
+                onChange={async (e) => {
+                  const newValue = e.target.checked;
+                  setSubscribed(newValue); // optimistic UI
+
+                  try {
+                    const response = await fetch('http://localhost:9090/notifications/subscribe', {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+                      },
+                      body: JSON.stringify({ subscribed: newValue }),
+                    });
+
+                    if (!response.ok) {
+                      const errorData = await response.json();
+                      throw new Error(errorData?.error || 'Failed to update subscription');
+                    }
+
+                    toast({
+                      title: 'Success',
+                      description: `Notifications ${newValue ? 'enabled' : 'disabled'}.`,
+                    });
+                  } catch (err) {
+                    setSubscribed(!newValue); // revert on failure
+                    toast({
+                      title: 'Error',
+                      description: (err as Error).message,
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+              />
+
+
             </div>
+
+            {/*
             <div className="flex items-center justify-between">
               <Label htmlFor="push-notifications">Push Notifications</Label>
               <input type="checkbox" id="push-notifications" defaultChecked />
@@ -348,6 +382,7 @@ const Profile = () => {
               <Label htmlFor="sms-notifications">SMS Notifications</Label>
               <input type="checkbox" id="sms-notifications" />
             </div>
+            */}
           </CardContent>
         </Card>
       </div>

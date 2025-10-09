@@ -13,11 +13,15 @@ import {
   ChevronRight,
   Bot,
   HelpCircle,
+  LayoutDashboard,
+  Upload,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/AuthContext';
 
 export type SidebarMode = 'expanded' | 'collapsed' | 'hover';
@@ -31,27 +35,39 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-const navigationItems = [
-  { icon: Home, label: 'Dashboard', path: '/' },
-  { icon: Calendar, label: 'Events', path: '/events' },
-  { icon: BookOpen, label: 'Tutors', path: '/tutors' },
-  { icon: MessageSquare, label: 'Forum', path: '/forum' },
+const navigationItems = [ 
+  // Student navigation
+  { icon: Home, label: 'Dashboard', path: '/', studentOnly: true },
+  { icon: Calendar, label: 'Events', path: '/events', studentOnly: true },
+  { icon: BookOpen, label: 'Tutors', path: '/tutors', studentOnly: true },
+  { icon: FileText, label: 'My Resources', path: '/resources' , studentOnly: true },
+  { icon: HelpCircle, label: 'FAQ', path: '/faq', studentOnly: true  },
+  
+  // Tutor navigation
+  { icon: LayoutDashboard, label: 'Tutor Dashboard', path: '/tutor', tutorOnly: true },
+  { icon: Users, label: 'My Students', path: '/tutor/students', tutorOnly: true },
+  { icon: Calendar, label: 'My Events', path: '/tutor/events', tutorOnly: true },
+  { icon: Upload, label: 'Content Upload', path: '/tutor/content', tutorOnly: true },
+  
+  // Shared navigation
   { icon: MessageCircle, label: 'Messages', path: '/messages' },
-  { icon: FileText, label: 'My Resources', path: '/resources' },
+  { icon: MessageSquare, label: 'Forum', path: '/forum' },
   { icon: Calendar, label: 'Calendar', path: '/calendar' },
   { icon: Bot, label: 'AI Tutor', path: '/ai-tutor' },
-  { icon: HelpCircle, label: 'FAQ', path: '/faq' },
-  { icon: BookOpen, label: 'Tutor Dashboard', path: '/tutor', tutorOnly: true },
+  
+  // Admin navigation
   { icon: Settings, label: 'Admin Panel', path: '/admin', adminOnly: true },
 ];
 
 export function Sidebar({ mode, onModeChange, className, isMobile = false, isOpen = false, onClose }: SidebarProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [viewMode, setViewMode] = useState<'student' | 'tutor'>('student');
   const { user } = useAuth();
   const location = useLocation();
   
   const isAdmin = user?.isAdmin || false;
   const isTutor = user?.isTutor || false;
+  
 
   const isExpanded = isMobile ? isOpen : (mode === 'expanded' || (mode === 'hover' && isHovered));
   const showLabels = isExpanded;
@@ -117,16 +133,24 @@ export function Sidebar({ mode, onModeChange, className, isMobile = false, isOpe
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4">
             {navigationItems.map((item) => {
+              // If user is admin, only show admin panel
+              if (isAdmin && !item.adminOnly) return null;
               if (item.adminOnly && !isAdmin) return null;
+              
+              // Filter based on view mode
+              if (viewMode === 'student' && item.tutorOnly) return null;
+              if (viewMode === 'tutor' && item.studentOnly) return null;
+              
+              // Hide tutor items if user is not a tutor
               if (item.tutorOnly && !isTutor) return null;
               
-              const isActive = location.pathname === item.path;
               const Icon = item.icon;
 
               const navButton = (
                   <NavLink
                   key={item.path}
                   to={item.path}
+                  end
                   className={({ isActive }) =>
                     cn(
                       'flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
@@ -164,6 +188,49 @@ export function Sidebar({ mode, onModeChange, className, isMobile = false, isOpe
 
           {/* Bottom Section */}
           <div className="border-t border-sidebar-border p-4">
+            {/* Student/Tutor Switch - Show only if user is a tutor */}
+            {isTutor && !isMobile && (
+              <div className="mb-4">
+                {showLabels ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-sidebar-foreground/60">View Mode</p>
+                    <div className="flex items-center justify-between">
+                      <span className={cn(
+                        "text-sm transition-colors",
+                        viewMode === 'student' ? "text-sidebar-foreground font-medium" : "text-sidebar-foreground/60"
+                      )}>
+                        Student
+                      </span>
+                      <Switch
+                        checked={viewMode === 'tutor'}
+                        onCheckedChange={(checked) => setViewMode(checked ? 'tutor' : 'student')}
+                      />
+                      <span className={cn(
+                        "text-sm transition-colors",
+                        viewMode === 'tutor' ? "text-sidebar-foreground font-medium" : "text-sidebar-foreground/60"
+                      )}>
+                        Tutor
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <div className="flex justify-center">
+                        <Switch
+                          checked={viewMode === 'tutor'}
+                          onCheckedChange={(checked) => setViewMode(checked ? 'tutor' : 'student')}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="ml-2">
+                      {viewMode === 'student' ? 'Switch to Tutor View' : 'Switch to Student View'}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            )}
+            
             {/* Sidebar Controls - Hide on mobile */}
             {!isMobile && (
               <div className="mb-4">
@@ -230,7 +297,7 @@ export function Sidebar({ mode, onModeChange, className, isMobile = false, isOpe
               {showLabels && (
                 <div className="flex-1 truncate">
                   <p className="text-sm font-medium text-sidebar-foreground">{user?.name || 'User'}</p>
-                  <p className="text-xs text-sidebar-foreground/60">{user?.email || 'user@campus.edu'}</p>
+                  <p className="text-xs text-sidebar-foreground/60">{user?.identifier || 'user@campus.edu'}</p>
                 </div>
               )}
             </NavLink>

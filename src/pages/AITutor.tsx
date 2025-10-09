@@ -1,93 +1,58 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Bot, Sparkles } from 'lucide-react';
-
-declare global {
-  interface Window {
-    botpressWebChat: any;
-  }
-}
 
 export default function AITutor() {
   useEffect(() => {
-    // Check if scripts are already loaded
-    const existingScript1 = document.querySelector('script[src*="cdn.botpress.cloud"]');
-    const existingScript2 = document.querySelector('script[src*="files.bpcontent.cloud"]');
-    
-    if (existingScript1 && existingScript2) {
-      // Scripts already loaded, just show the widget
-      if (window.botpressWebChat) {
-        window.botpressWebChat.sendEvent({ type: 'show' });
-        setTimeout(() => {
-          window.botpressWebChat?.sendEvent({ type: 'open' });
-        }, 300);
-      }
-      return;
-    }
-
-    // Load Botpress chatbot scripts
+    // Load Botpress webchat scripts
     const script1 = document.createElement('script');
     script1.src = 'https://cdn.botpress.cloud/webchat/v3.3/inject.js';
     script1.async = true;
     
-    const loadScript2 = () => {
-      const script2 = document.createElement('script');
-      script2.src = 'https://files.bpcontent.cloud/2025/09/30/10/20250930105052-R0WWRT0P.js';
-      script2.async = true;
-      
-      script2.onload = () => {
-        console.log('Botpress scripts loaded successfully');
-        // Show the widget, then force-open after a short delay
-        setTimeout(() => {
-          if (window.botpressWebChat) {
-            window.botpressWebChat.sendEvent({ type: 'show' });
-            window.botpressWebChat.sendEvent({ type: 'open' });
-          }
-        }, 800);
-        // Retry once more in case initialization is slow
-        setTimeout(() => {
-          try {
-            window.botpressWebChat?.sendEvent({ type: 'open' });
-          } catch (e) {
-            console.warn('Botpress open retry failed', e);
-          }
-        }, 2000);
-      };
-      
-      script2.onerror = () => {
-        console.error('Failed to load Botpress configuration script');
-      };
-      
+    const script2 = document.createElement('script');
+    script2.src = 'https://files.bpcontent.cloud/2025/10/02/21/20251002214522-9HK61HZW.js';
+    
+    script1.onload = () => {
       document.body.appendChild(script2);
     };
     
-    script1.onload = loadScript2;
-    script1.onerror = () => {
-      console.error('Failed to load Botpress webchat script');
+    script1.onerror = (error) => {
+      console.error('Failed to load Botpress inject script:', error);
+    };
+    
+    script2.onerror = (error) => {
+      console.error('Failed to load Botpress config script:', error);
     };
     
     document.body.appendChild(script1);
 
     return () => {
-      // Don't remove scripts on unmount to allow persistence
-      // Just hide the widget
-      if (window.botpressWebChat) {
-        window.botpressWebChat.sendEvent({ type: 'hide' });
+      if (document.body.contains(script1)) {
+        document.body.removeChild(script1);
+      }
+      if (document.body.contains(script2)) {
+        document.body.removeChild(script2);
       }
     };
   }, []);
 
   return (
-    <div className="h-full flex flex-col p-6">
-      <div className="text-center space-y-2 mb-6">
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="text-center space-y-3 mb-8">
         <div className="flex items-center justify-center space-x-2">
           <Bot className="h-8 w-8 text-primary" />
           <h1 className="text-3xl font-bold">AI Tutor</h1>
           <Sparkles className="h-6 w-6 text-yellow-500" />
         </div>
         <p className="text-muted-foreground">
-          Get instant help with your studies. Click the chat icon in the bottom right to start!
+          Get instant help with your studies. Ask questions about any topic!
         </p>
       </div>
+
+      <div 
+        id="bp-embedded-webchat" 
+        className="w-full h-[700px] rounded-lg border border-border bg-card overflow-hidden"
+        style={{ minHeight: '700px' }}
+      ></div>
     </div>
   );
 }
