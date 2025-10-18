@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { CheckCircle, XCircle, Paperclip, Eye } from 'lucide-react';
+import { CheckCircle, XCircle, Paperclip, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface TutorApplication {
@@ -92,14 +92,28 @@ export default function TutorApplicationsTab() {
     });
   };
 
+  const handleRemove = (id: number) => {
+    setApplications(prev => prev.filter(app => app.id !== id));
+    toast({
+      title: 'Application Removed',
+      description: 'The application has been permanently removed.',
+    });
+  };
+
   const handleViewTranscript = (transcriptUrl: string, studentName: string) => {
-    // In a real app, this would open the PDF in a new tab or modal
+    // Open the PDF in a new tab
+    const link = document.createElement('a');
+    link.href = transcriptUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
     toast({
       title: 'Opening Transcript',
       description: `Opening transcript for ${studentName}`,
     });
-    // Simulating opening a PDF
-    window.open(transcriptUrl, '_blank');
   };
 
   const getStatusBadge = (status: string) => {
@@ -181,7 +195,14 @@ export default function TutorApplicationsTab() {
                       </Button>
                     </div>
                   ) : (
-                    <span className="text-muted-foreground text-sm">—</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemove(application.id)}
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   )}
                 </TableCell>
               </TableRow>
