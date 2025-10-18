@@ -19,7 +19,7 @@ export interface TutorWithStudent extends Tutor {
 }
 
 export interface Module {
-  moduleId: number;
+  id: number;
   module_code: string;
   module_name: string;
   description: string;
@@ -29,3 +29,47 @@ export interface TutorModule {
   tutorId: number;  // Change from string to number
   moduleId: number;  // Change from string to number
 }
+
+export interface StudentResourceResponse {
+  studentId: number;
+  matches: Match[];
+}
+
+export interface Match {
+  resourceId: number;
+  tutor: TutorInfo;
+  learningMaterial: LearningMaterial;
+}
+
+export interface TutorInfo {
+  id: number;
+  studentId: number;
+  created_at: string;
+  studentEmail: string | null;
+  moduleIds: number[] | null;
+}
+
+export interface LearningMaterial {
+  id: string;
+  topicId: number;
+  moduleId: number;
+  uploaderId: number;
+  title: string;
+  documentType: string;
+  fileUrl: string;
+  createdAt: string;
+  tags: string[];
+}
+
+export interface TutorWithModulesResponse {
+  tutor: {
+    id: number;
+    studentId: number;
+    created_at: string;
+    studentEmail: string;
+  };
+  modules: Module[];
+}
+
+
+ 
