@@ -16,7 +16,7 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (identifier: string, password: string) => Promise<boolean>;
+  login: (identifier: string, password: string, isMicrosoft?: boolean) => Promise<boolean>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   isAuthenticated: boolean;
@@ -89,8 +89,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (token) initializeUser(token);
   }, []);
 
-  const login = async (identifier: string, password: string): Promise<boolean> => {
+  const login = async (identifier: string, password: string, isMicrosoft: boolean = false): Promise<boolean> => {
     try {
+<<<<<<< HEAD
       // Admin account - manual login
       if (identifier === 'admin@campus.edu' && password === 'admin123') {
         setUser({
@@ -143,22 +144,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           isAdmin: false,
           isTutor: true,
           tutorApplicationStatus: 'approved',
+=======
+      // Microsoft simulation uses real database authentication
+      if (isMicrosoft) {
+        const res = await fetch('http://localhost:9090/student/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, password }),
+>>>>>>> aafde7a201167ca2b06211380593c7dc8b3e3bcb
         });
+
+        if (!res.ok) return false;
+
+        const data = await res.json();
+        const token = data.token;
+        localStorage.setItem('authToken', token);
+        await initializeUser(token);
         return true;
       }
 
-      const res = await fetch('http://localhost:9090/student/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+      // Manual login has no authentication - accept any credentials
+      // Different roles based on email for demo purposes
+      const isAdmin = identifier === 'admin@campus.edu';
+      const isTutor = identifier === 'tutor@campus.edu';
+      
+      setUser({
+        id: identifier,
+        name: identifier.split('@')[0] || 'User',
+        identifier,
+        email: identifier,
+        avatar: '',
+        isAdmin,
+        isTutor,
+        tutorApplicationStatus: isTutor ? 'approved' : 'none',
       });
-
-      if (!res.ok) return false;
-
-      const data = await res.json();
-      const token = data.token;
-      localStorage.setItem('authToken', token);
-      await initializeUser(token);
       return true;
     } catch (err) {
       console.error(err);
