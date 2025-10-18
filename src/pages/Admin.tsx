@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import TutorApplicationsTab from '@/components/admin/TutorApplicationsTab';
 import {
   Settings,
   Users,
@@ -333,11 +334,12 @@ const loadMoreErrors = async () => {
 
       {/* Main Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>
           <TabsTrigger value="errors">Errors</TabsTrigger>
           <TabsTrigger value="forum">Forum</TabsTrigger>
+          <TabsTrigger value="applications">Tutor Apps</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="audit">Audit Logs</TabsTrigger>
         </TabsList>
@@ -701,6 +703,11 @@ const loadMoreErrors = async () => {
     </CardContent>
   </Card>
 </TabsContent>
+
+        {/* Tutor Applications Tab */}
+        <TabsContent value="applications" className="space-y-6">
+          <TutorApplicationsTab />
+        </TabsContent>
 
         {/* Reports & Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
