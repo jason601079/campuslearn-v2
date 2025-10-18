@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X } from 'lucide-react';
 
 interface TimeSlot {
@@ -18,6 +18,7 @@ interface TimeSlotSelectorProps {
 }
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
 
 export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({ value, onChange }) => {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
@@ -30,14 +31,44 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({ value, onCha
     );
   };
 
+  const mergeOverlappingTimes = (times: string[]): string[] => {
+    if (times.length === 0) return times;
+
+    const intervals = times.map(time => {
+      const [start, end] = time.split('-').map(t => parseInt(t.split(':')[0]));
+      return { start, end, original: time };
+    }).sort((a, b) => a.start - b.start);
+
+    const merged: Array<{ start: number; end: number }> = [];
+    let current = intervals[0];
+
+    for (let i = 1; i < intervals.length; i++) {
+      const next = intervals[i];
+      if (next.start <= current.end) {
+        // Overlapping or adjacent - merge them
+        current.end = Math.max(current.end, next.end);
+      } else {
+        // No overlap - push current and move to next
+        merged.push(current);
+        current = next;
+      }
+    }
+    merged.push(current);
+
+    return merged.map(interval => `${interval.start.toString().padStart(2, '0')}:00-${interval.end.toString().padStart(2, '0')}:00`);
+  };
+
   const addTimeSlots = () => {
     if (selectedDays.length === 0 || !startTime || !endTime) return;
 
-    if (startTime >= endTime) {
+    const startHour = parseInt(startTime);
+    const endHour = parseInt(endTime);
+
+    if (startHour >= endHour) {
       return;
     }
 
-    const timeSlot = `${startTime}-${endTime}`;
+    const timeSlot = `${startTime}:00-${endTime}:00`;
 
     const updatedSlots = [...value];
 
@@ -46,7 +77,8 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({ value, onCha
       
       if (existingDay) {
         if (!existingDay.times.includes(timeSlot)) {
-          existingDay.times = [...existingDay.times, timeSlot].sort();
+          const allTimes = [...existingDay.times, timeSlot];
+          existingDay.times = mergeOverlappingTimes(allTimes);
         }
       } else {
         updatedSlots.push({ day, times: [timeSlot] });
@@ -100,22 +132,34 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({ value, onCha
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
           <div className="space-y-2">
             <Label htmlFor="start-time">Start Time</Label>
-            <Input
-              id="start-time"
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-            />
+            <Select value={startTime} onValueChange={setStartTime}>
+              <SelectTrigger id="start-time">
+                <SelectValue placeholder="Select hour" />
+              </SelectTrigger>
+              <SelectContent>
+                {HOURS.map(hour => (
+                  <SelectItem key={hour} value={hour}>
+                    {hour}:00
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="end-time">End Time</Label>
-            <Input
-              id="end-time"
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            />
+            <Select value={endTime} onValueChange={setEndTime}>
+              <SelectTrigger id="end-time">
+                <SelectValue placeholder="Select hour" />
+              </SelectTrigger>
+              <SelectContent>
+                {HOURS.filter(hour => !startTime || parseInt(hour) > parseInt(startTime)).map(hour => (
+                  <SelectItem key={hour} value={hour}>
+                    {hour}:00
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Button 

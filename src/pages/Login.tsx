@@ -68,11 +68,7 @@ const Login = () => {
 
   const handleMicrosoftSuccess = async (email: string, password: string) => {
     // Microsoft login uses real database authentication
-<<<<<<< HEAD
-    const success = await login(email, password);
-=======
     const success = await login(email, password, true);
->>>>>>> aafde7a201167ca2b06211380593c7dc8b3e3bcb
     
     if (success) {
       toast({

@@ -71,5 +71,21 @@ export interface TutorWithModulesResponse {
   modules: Module[];
 }
 
+export interface ErrorRecord {
+  id: string;
+  createdAt: string;
+  message: string;
+  stackTrace?: string | null;
+  endpoint?: string | null;
+  userId?: number | null;
+  additional_info?: any | null; // jsonb can be any object
+}
 
+export interface ErrorResponse {
+  errors: ErrorRecord[];
+  page: number;
+  size: number;
+  total: number;
+  hasMore: boolean;
+}
  

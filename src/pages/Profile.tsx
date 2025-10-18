@@ -139,6 +139,43 @@ const Profile = () => {
   };
 
   const handleTutorApplication = () => {
+    // Validate all required fields
+    if (tutorApplication.subjects.length === 0) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please select at least one subject you can tutor.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!qualificationFile) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please upload your most recent transcript.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!tutorApplication.experience.trim()) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please describe your teaching/tutoring experience.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (tutorApplication.availability.length === 0) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please add at least one availability time slot.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     updateUser({ tutorApplicationStatus: 'pending' });
     toast({
       title: 'Application Submitted',
@@ -313,6 +350,34 @@ const Profile = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Tutor Availability Management */}
+        {user.isTutor && (
+          <Card className="shadow-custom-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Tutor Availability
+              </CardTitle>
+              <CardDescription>Manage your tutoring availability schedule</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="tutor-availability">Update Your Availability</Label>
+                <TimeSlotSelector
+                  value={tutorApplication.availability}
+                  onChange={(slots) => {
+                    setTutorApplication({ ...tutorApplication, availability: slots });
+                    toast({
+                      title: 'Availability Updated',
+                      description: 'Your tutoring schedule has been updated.',
+                    });
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tutor Application */}
         {(!user.isTutor && user.tutorApplicationStatus !== 'pending') && (

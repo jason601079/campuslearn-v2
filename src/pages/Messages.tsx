@@ -19,7 +19,6 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -51,6 +50,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import EmojiPicker from 'emoji-picker-react';
+import supabase from '@/lib/supabase';
 
 const API_BASE_URL = 'http://localhost:9090/messaging';
 const STUDENTS_API_BASE_URL = 'http://localhost:9090/student';
@@ -141,7 +141,7 @@ export default function Messages() {
           try {
             const [participantsRes, messagesRes] = await Promise.all([
               axios.get(`${API_BASE_URL}/participants/thread/${thread.threadId}`),
-              axios.get(`${API_BASE_URL}/messages/thread/${thread.threadId}`),
+              axios.get(`${API_BASE_URL}/messages/thread/${thread.threadId}?sort=desc&limit=1`), // Get only the latest message
             ]);
 
             const participantsData: Participant[] = participantsRes.data || [];
@@ -158,26 +158,28 @@ export default function Messages() {
                 })
             );
 
-            const lastMsgData = messagesRes.data && messagesRes.data.length > 0
-              ? messagesRes.data[messagesRes.data.length - 1]
+            // Get the most recent message (first one in the array since we sorted by desc)
+            const latestMessage = messagesRes.data && messagesRes.data.length > 0
+              ? messagesRes.data[0] // Get the first message (most recent)
               : null;
 
             return {
               id: thread.threadId,
               name: otherParticipants.join(', ') || 'Self Chat',
-              lastMessage: lastMsgData ? lastMsgData.content : '',
-              timestamp: lastMsgData ? lastMsgData.timestamp : thread.created_at || new Date().toISOString(),
+              lastMessage: latestMessage ? latestMessage.content : 'No messages yet',
+              timestamp: latestMessage ? latestMessage.timestamp : thread.created_at || new Date().toISOString(),
               unread: 0,
               avatar: '/api/placeholder/40/40',
               online: false,
               role: otherParticipants.length > 1 ? 'Group Chat' : 'Direct Chat',
             } as Conversation;
           } catch (err) {
+            console.error('Error enriching thread:', err);
             // Fallback minimal conversation
             return {
               id: thread.threadId,
               name: `Thread ${thread.threadId.slice(0, 8)}`,
-              lastMessage: '',
+              lastMessage: 'No messages yet',
               timestamp: thread.created_at || new Date().toISOString(),
               unread: 0,
               avatar: '/api/placeholder/40/40',
@@ -188,7 +190,7 @@ export default function Messages() {
         })
       );
 
-      // Sort by timestamp descending
+      // Sort by timestamp descending (most recent first)
       enrichedThreads.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
       setConversations(enrichedThreads);
@@ -203,7 +205,7 @@ export default function Messages() {
   // Initial fetch and polling for threads
   useEffect(() => {
     fetchThreads();
-    const interval = setInterval(() => fetchThreads(true), 10000); // Poll every 5 seconds silently
+    const interval = setInterval(() => fetchThreads(true), 10000); // Poll every 10 seconds silently
     return () => clearInterval(interval);
   }, [currentUserId, toast]);
 
@@ -239,6 +241,8 @@ export default function Messages() {
         senderName: participantData.find((p) => p.studentId === m.senderId)?.studentName || `User ${m.senderId}`,
       }));
 
+      // Sort messages by timestamp ascending (oldest first)
+      msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
       setMessages(msgs);
     } catch (err) {
       console.error('Error fetching chat data:', err);
@@ -250,20 +254,82 @@ export default function Messages() {
 
   // Fetch participants & messages for selected chat, plus polling
   useEffect(() => {
-    setMessages([]);
-    setParticipants([]);
-    if (!selectedChat) {
-      setIsChatLoading(false);
-      return;
-    }
-    fetchChatData();
-  }, [selectedChat, currentUserId, toast]);
-
-  useEffect(() => {
     if (!selectedChat) return;
-    const interval = setInterval(() => fetchChatData(true), 10000); // Poll every 3 seconds silently
-    return () => clearInterval(interval);
-  }, [selectedChat]);
+
+    // 1️⃣ Initial fetch once when chat is opened (silent = no flicker)
+    fetchChatData(true);
+
+    // 2️⃣ Subscribe to Supabase Realtime for messages
+    const channel = supabase
+      .channel(`messages_thread_${selectedChat}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT / DELETE / UPDATE
+          schema: 'public',
+          table: 'messages',
+          filter: `thread_id=eq.${selectedChat}`,
+        },
+        (payload) => {
+          console.log('Realtime event:', payload);
+
+          if (payload.eventType === 'INSERT') {
+            const newMsg = payload.new;
+            const newMessage: Message = {
+              id: newMsg.id,
+              senderId: newMsg.sender_id,
+              content: newMsg.content,
+              timestamp: newMsg.timestamp || new Date().toISOString(),
+              isOwn: newMsg.sender_id === currentUserId,
+              senderName:
+                participants.find((p) => p.studentId === newMsg.sender_id)
+                  ?.studentName || `User ${newMsg.sender_id}`,
+            };
+
+            // Add new message and sort to maintain chronological order
+            setMessages((prev) => {
+              const updated = [...prev, newMessage];
+              updated.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+              return updated;
+            });
+
+            // Update the conversation list with the new last message
+            setConversations(prev => prev.map(conv => 
+              conv.id === selectedChat 
+                ? { 
+                    ...conv, 
+                    lastMessage: newMsg.content,
+                    timestamp: newMsg.timestamp || new Date().toISOString()
+                  }
+                : conv
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            setMessages((prev) => {
+              const updated = prev.map((m) =>
+                m.id === payload.new.id
+                  ? {
+                      ...m,
+                      content: payload.new.content,
+                      timestamp: payload.new.timestamp || m.timestamp,
+                    }
+                  : m
+              );
+              // Re-sort after update
+              updated.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+              return updated;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // 3️⃣ Cleanup
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedChat, currentUserId, participants]);
 
   // Fetch all students when new message modal opens (only once)
   useEffect(() => {
@@ -368,8 +434,8 @@ export default function Messages() {
       const newConv: Conversation = {
         id: threadId,
         name: threadName,
-        lastMessage: '',
-        timestamp: threadResp.data?.created_at || new Date().toISOString(),
+        lastMessage: 'Say hello!',
+        timestamp: new Date().toISOString(),
         unread: 0,
         avatar: '/api/placeholder/40/40',
         online: false,
@@ -404,19 +470,19 @@ export default function Messages() {
         content: messageText,
         timestamp: new Date().toISOString(),
       };
-      const res = await axios.post(`${API_BASE_URL}/messages`, messageDTO);
+      await axios.post(`${API_BASE_URL}/messages`, messageDTO);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: res.data?.id || Math.random().toString(36).slice(2, 9),
-          senderId: res.data?.senderId || currentUserId,
-          content: res.data?.content || messageText,
-          timestamp: res.data?.timestamp || new Date().toISOString(),
-          isOwn: true,
-          senderName: 'You',
-        },
-      ]);
+      // Update the conversation list with the new last message immediately
+      setConversations(prev => prev.map(conv => 
+        conv.id === selectedChat 
+          ? { 
+              ...conv, 
+              lastMessage: messageText,
+              timestamp: new Date().toISOString()
+            }
+          : conv
+      ));
+
       setMessageText('');
     } catch (err) {
       console.error('Error sending message:', err);
@@ -429,16 +495,21 @@ export default function Messages() {
   };
 
   const addEmoji = (emojiData: any) => {
-    // emojiData may contain .emoji property depending on version
     const char = emojiData?.emoji ?? emojiData?.native ?? '';
     setMessageText((p) => p + char);
   };
 
+  // Fixed groupMessagesByDate function - maintains chronological order (oldest first)
   const groupMessagesByDate = (messages: Message[]) => {
     const groups: { date: string; messages: Message[] }[] = [];
     let currentDate = '';
+    
+    // Messages should already be sorted chronologically (oldest first)
     messages.forEach((msg) => {
-      const msgDate = format(parseISO(msg.timestamp), 'yyyy-MM-dd');
+      // Ensure timestamp exists and is valid
+      const validTimestamp = msg.timestamp || new Date().toISOString();
+      const msgDate = format(parseISO(validTimestamp), 'yyyy-MM-dd');
+      
       if (msgDate !== currentDate) {
         currentDate = msgDate;
         groups.push({ date: msgDate, messages: [msg] });
@@ -446,17 +517,42 @@ export default function Messages() {
         groups[groups.length - 1].messages.push(msg);
       }
     });
+    
     return groups;
   };
 
+  // Fixed date formatting functions with proper timestamp validation
   const formatDateHeader = (date: string) => {
-    const parsed = parseISO(date);
-    if (isToday(parsed)) return 'Today';
-    if (isYesterday(parsed)) return 'Yesterday';
-    return format(parsed, 'MMMM d, yyyy');
+    try {
+      const parsed = parseISO(date);
+      if (isToday(parsed)) return 'Today';
+      if (isYesterday(parsed)) return 'Yesterday';
+      return format(parsed, 'MMMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date header:', error);
+      return 'Unknown date';
+    }
   };
-  const formatMessageTime = (timestamp: string) => format(parseISO(timestamp), 'h:mm a');
-  const formatConversationTime = (timestamp: string) => formatDistanceToNow(parseISO(timestamp), { addSuffix: true });
+
+  const formatMessageTime = (timestamp: string) => {
+    try {
+      const validTimestamp = timestamp || new Date().toISOString();
+      return format(parseISO(validTimestamp), 'h:mm a');
+    } catch (error) {
+      console.error('Error formatting message time:', error);
+      return 'Unknown time';
+    }
+  };
+
+  const formatConversationTime = (timestamp: string) => {
+    try {
+      const validTimestamp = timestamp || new Date().toISOString();
+      return formatDistanceToNow(parseISO(validTimestamp), { addSuffix: true });
+    } catch (error) {
+      console.error('Error formatting conversation time:', error);
+      return 'Recently';
+    }
+  };
 
   const currentChat = conversations.find((c) => c.id === selectedChat);
 
@@ -482,7 +578,7 @@ export default function Messages() {
         {isMobile ? (
           <>
             {mobileView === 'conversations' ? (
-              <Card className="h-[600px] rounded-xl shadow-md flex flex-col">
+              <Card className="h-[calc(100vh-120px)] rounded-xl shadow-md">
                 <CardHeader className="p-4">
                   <CardTitle className="text-lg">Chats</CardTitle>
                   <div className="relative">
@@ -490,9 +586,8 @@ export default function Messages() {
                     <Input placeholder="Search messages..." className="pl-9 rounded-full" />
                   </div>
                 </CardHeader>
-                <CardContent className="p-0 flex-1 overflow-hidden">
-                  <ScrollArea className="h-[calc(100vh-220px)]">
-                    <div className="space-y-1 px-2">
+                <CardContent className="p-0">
+                  <div className="space-y-1 overflow-y-auto h-[calc(100vh-200px)]">
                     {isLoading ? (
                       <div className="p-4 text-center text-muted-foreground animate-pulse">Loading conversations...</div>
                     ) : conversations.length === 0 ? (
@@ -528,15 +623,14 @@ export default function Messages() {
                             <p className="text-sm text-muted-foreground truncate mt-1">{conversation.lastMessage}</p>
                           </div>
                         </div>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
+                      ))
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ) : (
               currentChat && (
-                <Card className="h-[600px] flex flex-col rounded-xl shadow-md">
+                <Card className="h-[calc(100vh-80px)] flex flex-col rounded-xl shadow-md">
                   <CardHeader className="border-b p-3">
                     <div className="flex items-center space-x-3">
                       <Button 
@@ -581,54 +675,51 @@ export default function Messages() {
                     </div>
                   </CardHeader>
 
-                  <ScrollArea className="flex-1">
-                    <CardContent className="p-3">
-                      {isChatLoading ? (
-                        <div className="flex items-center justify-center py-12">
-                          <div className="text-center">
-                            <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
-                            <h3 className="text-lg font-semibold mb-2">Loading messages...</h3>
-                          </div>
+                  <CardContent className="flex-1 p-3 overflow-y-auto">
+                    {isChatLoading ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                          <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
+                          <h3 className="text-lg font-semibold mb-2">Loading messages...</h3>
                         </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {groupMessagesByDate(messages).map((group, index) => (
-                            <React.Fragment key={index}>
-                              <div className="flex justify-center my-3">
-                                <Badge variant="secondary" className="px-2 py-0.5 text-xs rounded-full">
-                                  {formatDateHeader(group.date)}
-                                </Badge>
-                              </div>
-                              {group.messages.map((message) => (
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {groupMessagesByDate(messages).map((group, index) => (
+                          <React.Fragment key={index}>
+                            <div className="flex justify-center my-3">
+                              <Badge variant="secondary" className="px-2 py-0.5 text-xs rounded-full">
+                                {formatDateHeader(group.date)}
+                              </Badge>
+                            </div>
+                            {group.messages.map((message) => (
+                              <div
+                                key={message.id}
+                                className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                              >
                                 <div
-                                  key={message.id}
-                                  className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                                  className={`max-w-[80%] px-3 py-1.5 rounded-2xl text-sm ${message.isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}
                                 >
-                                  <div
-                                    className={`max-w-[80%] px-3 py-1.5 rounded-2xl text-sm ${message.isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}
-                                  >
-                                    {currentChat.role === 'Group Chat' && (
-                                      <p className="text-xs font-semibold mb-0.5">{message.isOwn ? 'You' : message.senderName}</p>
-                                    )}
-                                    <p>{message.content}</p>
-                                    <p className={`text-xs mt-0.5 ${message.isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                                      {formatMessageTime(message.timestamp)}
-                                    </p>
-                                  </div>
+                                  {currentChat.role === 'Group Chat' && (
+                                    <p className="text-xs font-semibold mb-0.5">{message.isOwn ? 'You' : message.senderName}</p>
+                                  )}
+                                  <p>{message.content}</p>
+                                  <p className={`text-xs mt-0.5 ${message.isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                                    {formatMessageTime(message.timestamp)}
+                                  </p>
                                 </div>
-                              ))}
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </ScrollArea>
+                              </div>
+                            ))}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
 
                   {/* Message Input - mobile */}
                   <div className="border-t p-2 bg-background">
                     <div className="flex items-end space-x-2">
                       <div className="flex-1 relative">
-                        {/* emoji picker placed relative to this container, adjusted to left-0 for better mobile positioning */}
                         {showEmojiPicker && (
                           <div className="absolute bottom-full mb-2 left-0 z-50 w-full max-w-xs">
                             <EmojiPicker onEmojiClick={addEmoji} />
@@ -668,9 +759,9 @@ export default function Messages() {
           </>
         ) : (
           /* Desktop layout */
-          <div className="grid gap-6 lg:grid-cols-3 h-[600px]">
+          <div className="grid gap-6 lg:grid-cols-3 h-[calc(100vh-200px)]">
             {/* Conversations List */}
-            <Card className="lg:col-span-1 flex flex-col">
+            <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle className="text-lg">Conversations</CardTitle>
                 <div className="relative">
@@ -678,9 +769,8 @@ export default function Messages() {
                   <Input placeholder="Search messages..." className="pl-9" />
                 </div>
               </CardHeader>
-              <CardContent className="p-0 flex-1 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="space-y-1 px-2">
+              <CardContent className="p-0">
+                <div className="space-y-1 max-h-96 overflow-y-auto">
                   {isLoading ? (
                     <div className="p-4 text-center text-muted-foreground animate-pulse">Loading conversations...</div>
                   ) : conversations.length === 0 ? (
@@ -707,10 +797,9 @@ export default function Messages() {
                           <p className="text-xs text-muted-foreground">{conversation.role}</p>
                         </div>
                       </div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
+                    ))
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -754,40 +843,37 @@ export default function Messages() {
                     </div>
                   </CardHeader>
 
-                  <ScrollArea className="flex-1">
-                    <CardContent className="p-4">
-                      {isChatLoading ? (
-                        <div className="flex items-center justify-center py-12 text-muted-foreground animate-pulse">
-                          Loading messages...
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {groupMessagesByDate(messages).map((group, index) => (
-                            <React.Fragment key={index}>
-                              <div className="flex justify-center my-4">
-                                <Badge variant="secondary" className="px-3 py-1 text-sm">{formatDateHeader(group.date)}</Badge>
-                              </div>
-                              {group.messages.map((message) => (
-                                <div key={message.id} className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}>
-                                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                                    {currentChat?.role === 'Group Chat' && <p className="text-xs font-semibold mb-1">{message.isOwn ? 'You' : message.senderName}</p>}
-                                    <p className="text-sm">{message.content}</p>
-                                    <p className={`text-xs mt-1 ${message.isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{formatMessageTime(message.timestamp)}</p>
-                                  </div>
+                  <CardContent className="flex-1 p-4 overflow-y-auto">
+                    {isChatLoading ? (
+                      <div className="flex-1 flex items-center justify-center text-muted-foreground animate-pulse">
+                        Loading messages...
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {groupMessagesByDate(messages).map((group, index) => (
+                          <React.Fragment key={index}>
+                            <div className="flex justify-center my-4">
+                              <Badge variant="secondary" className="px-3 py-1 text-sm">{formatDateHeader(group.date)}</Badge>
+                            </div>
+                            {group.messages.map((message) => (
+                              <div key={message.id} className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                  {currentChat?.role === 'Group Chat' && <p className="text-xs font-semibold mb-1">{message.isOwn ? 'You' : message.senderName}</p>}
+                                  <p className="text-sm">{message.content}</p>
+                                  <p className={`text-xs mt-1 ${message.isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{formatMessageTime(message.timestamp)}</p>
                                 </div>
-                              ))}
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </ScrollArea>
+                              </div>
+                            ))}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
 
                   {/* Message input - desktop */}
                   <div className="border-t p-4 relative">
                     <div className="flex items-end space-x-2">
                       <div className="flex-1 relative">
-                        {/* Emoji picker anchored above the input, left-aligned for consistency */}
                         {showEmojiPicker && (
                           <div className="absolute bottom-full mb-2 left-0 z-50">
                             <EmojiPicker onEmojiClick={addEmoji} />
@@ -809,7 +895,6 @@ export default function Messages() {
 
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center space-x-2">
-                            {/* attachment removed as requested */}
                             <Button variant="ghost" size="sm" onClick={() => setShowEmojiPicker((s) => !s)}>
                               <Smile className="h-4 w-4" />
                             </Button>
@@ -842,48 +927,51 @@ export default function Messages() {
           <DialogHeader>
             <DialogTitle>New Message</DialogTitle>
           </DialogHeader>
-
           <div className="space-y-4">
-            <Input
-              placeholder="Search users by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-
+            <div>
+              <Label>Search users</Label>
+              <Input
+                placeholder="Search by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
             <div className="max-h-60 overflow-y-auto space-y-2">
-              {searchResults.length > 0 ? (
-                searchResults.map((s) => (
-                  <div key={s.id} className="flex items-center space-x-2">
-                    <Checkbox id={`user-${s.id}`} checked={selectedUsers.includes(s.id)} onCheckedChange={() => toggleSelectUser(s.id)} />
-                    <Label htmlFor={`user-${s.id}`} className="flex-1">
-                      {s.name} ({s.email})
-                    </Label>
+              {(searchQuery ? searchResults : allStudents).map((student) => (
+                <div key={student.id} className="flex items-center space-x-3 p-2 rounded-lg border">
+                  <Checkbox
+                    checked={selectedUsers.includes(student.id)}
+                    onCheckedChange={() => toggleSelectUser(student.id)}
+                  />
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-medium">{student.name}</p>
+                    <p className="text-sm text-muted-foreground">{student.email}</p>
                   </div>
-                ))
-              ) : searchQuery ? (
-                <p className="text-sm text-muted-foreground">No users found.</p>
-              ) : (
-                <p className="text-sm text-muted-foreground">Type to search users...</p>
-              )}
+                </div>
+              ))}
             </div>
           </div>
-
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsNewMessageModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateThread}>Create</Button>
+            <Button onClick={handleCreateThread} disabled={selectedUsers.length === 0}>
+              Create Conversation
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete/Leave Confirmation Modal */}
       <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Action</DialogTitle>
+            <DialogTitle>{deleteType === 'delete' ? 'Delete Conversation' : 'Leave Conversation'}</DialogTitle>
             <DialogDescription>
-              {deleteType === 'delete'
+              {deleteType === 'delete' 
                 ? 'Are you sure you want to delete this conversation? This action cannot be undone.'
-                : 'Are you sure you want to leave this conversation?'}
+                : 'Are you sure you want to leave this conversation? You will no longer receive messages from this chat.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
