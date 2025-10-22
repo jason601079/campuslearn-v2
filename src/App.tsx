@@ -14,6 +14,7 @@ import Messages from "./pages/Messages";
 import Resources from "./pages/Resources";
 import AITutor from "./pages/AITutor";
 import ResourceDetail from "./pages/ResourceDetail";
+import StudySprint from "./pages/StudySprint";
 import Calendar from "./pages/Calendar";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
@@ -70,6 +71,7 @@ const AppRoutes = () => {
         <Route path="/tutor/content" element={<ContentUpload />} />
         <Route path="/tutor/students" element={<MyStudents />} />
         <Route path="/tutor/events" element={<MyEvents />} />
+        <Route path="/study-sprint" element={<StudySprint />} />
         <Route path="*" element={<NotFound />} />
         <Route path="/student-progress" element={<ProgressPage/>}/>
         <Route path="/notifications" element={<NotificationsPage />} />

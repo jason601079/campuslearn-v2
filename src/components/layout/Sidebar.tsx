@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Upload,
   Users,
+  Gamepad2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ const navigationItems = [
   { icon: MessageSquare, label: 'Forum', path: '/forum' },
   { icon: Calendar, label: 'Calendar', path: '/calendar' },
   { icon: Bot, label: 'AI Tutor', path: '/ai-tutor' },
+  { icon: Gamepad2, label: 'Study Sprint', path: '/study-sprint' },
   
   // Admin navigation
   { icon: Settings, label: 'Admin Dashboard', path: '/admin', adminOnly: true },
