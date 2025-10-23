@@ -226,6 +226,9 @@ const Profile = () => {
         throw new Error(errorData.message || 'Failed to submit tutor application');
       }
 
+      // Update user status to pending
+      updateUser({ tutorApplicationStatus: 'pending' });
+
       toast({
         title: 'Application Submitted',
         description: 'Your tutor application has been submitted for review.',
